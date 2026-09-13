@@ -99,9 +99,32 @@ Se quitó `colors.navy` de toda la UI (header del Stack, chip activo en la panta
 
 El primer fix (`useSafeAreaInsets` + `position:absolute` con `bottom: insets.bottom + 24`) seguía sin funcionar en el dispositivo real. En vez de seguir ajustando el cálculo a mano, se cambió el enfoque de raíz: la barra de controles ya no es un overlay absoluto sobre la cámara — ahora es un elemento normal en la columna (`flex`), debajo de la vista de cámara, dentro de un `<SafeAreaView edges={['top','bottom']}>`. Al estar en flujo normal (no `position:absolute`), es estructuralmente imposible que el sistema operativo la dibuje encima o la tape, sin importar qué valor exacto reporten los insets en ese dispositivo. También se quitó `presentation: 'fullScreenModal'` de esta ruta (algunos dispositivos Android no propagan bien los safe-area insets a pantallas modales) a favor de una pantalla normal con animación `slide_from_bottom`.
 
+## Ronda 4 (2026-09-13)
+
+Tres pedidos más de Brandon: "el salir no sirve", "el botón de tomar fotos sigue sin quedar, sustituirlo por un + típico", y "¿cómo sabemos o daríamos de alta cuando ya terminamos con una válvula?".
+
+### "Salir" no hacía nada — bug real, no percepción
+
+`logout()` sí limpiaba el token, pero nada navegaba a `/login` si ya estabas parado en `/servicios` o más adentro del stack — la pantalla se quedaba igual, como si el botón no respondiera. Se agregó `AuthGate` en `app/_layout.tsx`: un componente sin UI que observa `token` + la ruta actual (`useSegments`) y fuerza `router.replace('/login')` en cuanto el token desaparece, sin importar en qué pantalla se dispare el logout. Protege también contra un futuro caso de expiración de sesión, no solo el botón manual.
+
+### Botón de cámara — de barra completa a FAB
+
+Después de dos intentos con la barra ocupando todo el ancho (ronda 1: insets manuales; ronda 3: flujo normal en la propia pantalla de cámara) el botón de ENTRADA a la cámara (el que dice "Tomar foto" en la pantalla de la válvula, no el disparador dentro de la cámara) seguía reportándose mal. En vez de seguir iterando sobre el mismo diseño, se cambió el patrón: ahora es un FAB circular naranja con un ícono "+" (Ionicons), flotando en la esquina inferior derecha con 24px de margen, dentro de un `SafeAreaView`. Al no ir pegado al borde (margen + safe area combinados, no uno solo), es mucho más difícil que cualquier barra del sistema lo alcance a tapar. El disparador *dentro* de la pantalla de cámara (el círculo blanco) no cambió, sigue con el fix de la ronda 3.
+
+### Marcar una válvula como terminada
+
+No existía forma de cambiar el estatus de una válvula desde la app — nacía "pendiente" y se quedaba así para siempre en la UI aunque el técnico ya hubiera terminado. Se agregó un selector de 3 botones (Pendiente / En proceso / Completa) arriba de los chips de etapa, en `valvulas/[id].tsx`. El cambio es **optimista y offline-first**, mismo patrón que las fotos:
+
+1. Se guarda de inmediato en SQLite (`actualizarEstatusValvulaLocal`, columna nueva `estatus_sync_pendiente`) — se ve reflejado al instante, haya o no señal.
+2. `sincronizarEstatusValvulas` intenta confirmarlo con el servidor en cada sync (antes incluso que las fotos, para minimizar la ventana de la siguiente nota).
+3. `guardarServicios` fue modificado para NO pisar un estatus todavía pendiente de confirmar cuando llega un sync de catálogo — sin esto, un cambio de estatus recién hecho podía perderse si el catálogo se refrescaba antes de que el cambio llegara al servidor.
+
+**Importante — requiere un endpoint que generador-facturas todavía no tiene:** `PUT /api/tecnico/valvulas/{id}/estatus` con body `{ estatus: "pendiente"|"en_proceso"|"completo" }`. Ya se lo pedí a FredceSistema. Mientras no exista, el cambio se ve bien en la app (UI optimista) pero nunca se confirma con el servidor — se queda con el reloj de arena (⏳) junto a los botones indefinidamente, reintentando en cada sync sin romper nada ni perder el dato local.
+
 ## Pendiente
 
-- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1, 2 y 3) — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios y razonamiento de layout/contraste. El botón de cámara en particular ya lleva dos intentos; si sigue sin verse bien, decirlo explícitamente para investigar más a fondo en vez de seguir ajustando a ciegas.
+- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 4) — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios y razonamiento de layout/contraste.
+- **`PUT /api/tecnico/valvulas/{id}/estatus` sin implementar del lado de generador-facturas** — bloquea que el cambio de estatus se confirme de verdad (ver arriba).
 - Manejo de caso "servicio no encontrado en campo" (aún no resuelto en el spec).
 - Reemplazar el ícono de la app (hoy es el genérico de Expo) por uno basado en el logo de marca — el `logo-dark.png` nuevo tampoco sirve directo como adaptive icon (es rectangular, 2823×1053); requiere recortar solo el ícono de la válvula a un cuadrado.
 - Pantalla de detalle de servicio no distingue todavía qué técnico tomó qué foto (a propósito, el spec dice que el reporte no agrupa por técnico) pero podría valer la pena mostrarlo como metadato secundario.

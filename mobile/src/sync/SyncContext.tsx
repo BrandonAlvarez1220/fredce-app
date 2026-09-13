@@ -4,7 +4,13 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { AppState } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { contarFotosPendientes, leerMeta } from '../db/repository';
-import { META_LAST_SYNC, sincronizarCatalogos, sincronizarFotosPendientes, type ResultadoSubida } from './sync';
+import {
+  META_LAST_SYNC,
+  sincronizarCatalogos,
+  sincronizarEstatusValvulas,
+  sincronizarFotosPendientes,
+  type ResultadoSubida,
+} from './sync';
 
 /**
  * Responde la pregunta de Brandon: ¿cómo/cuándo se sincronizan las fotos?
@@ -56,6 +62,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setIsSyncing(true);
     setLastError(null);
     try {
+      await sincronizarEstatusValvulas(db, currentToken);
       const resultado = await sincronizarFotosPendientes(db, currentToken);
       await sincronizarCatalogos(db, currentToken);
       setLastResult(resultado);

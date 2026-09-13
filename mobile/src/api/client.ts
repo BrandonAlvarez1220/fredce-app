@@ -77,6 +77,22 @@ export function getValvula(id: number, token: string): Promise<ValvulaDetalle> {
 }
 
 /**
+ * NOTA: este endpoint todavía no existe del lado de generador-facturas —
+ * propuesto a FredceSistema (2026-09-13) para poder marcar una válvula como
+ * "en_proceso"/"completo" desde la app. Mientras no lo implementen, esta
+ * llamada falla (404) y `sincronizarEstatusValvulas` simplemente la
+ * reintenta en el siguiente sync — el cambio queda guardado local mientras
+ * tanto (ver `actualizarEstatusValvulaLocal`), no se pierde.
+ */
+export function actualizarEstatusValvula(
+  id: number,
+  estatus: 'pendiente' | 'en_proceso' | 'completo',
+  token: string
+): Promise<{ id: number; estatus: string }> {
+  return request(`/valvulas/${id}/estatus`, { method: 'PUT', token, json: { estatus } });
+}
+
+/**
  * Sube una foto ya capturada y guardada localmente. Idempotente por
  * clientUuid: reintentar la misma subida (p.ej. tras perder señal a medio
  * camino) es seguro, el servidor regresa el registro existente.

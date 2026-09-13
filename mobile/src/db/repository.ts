@@ -16,12 +16,15 @@ export interface FotoLocal {
   sync_error: string | null;
 }
 
+export type EstatusValvula = 'pendiente' | 'en_proceso' | 'completo';
+
 export interface ValvulaLocal {
   id: number;
   servicio_id: number;
   codigo: string;
-  estatus: string;
+  estatus: EstatusValvula;
   total_fotos: number;
+  estatus_sync_pendiente: number; // 0 | 1 — 1 mientras el cambio de estatus no se confirma con el servidor
 }
 
 export interface ServicioLocal {
@@ -32,9 +35,21 @@ export interface ServicioLocal {
   estatus: string;
 }
 
-/** Reemplaza el cache local de servicios+válvulas con lo que llegó del servidor. */
+/**
+ * Reemplaza el cache local de servicios+válvulas con lo que llegó del
+ * servidor. Si una válvula tiene un cambio de estatus todavía sin
+ * confirmar (`estatus_sync_pendiente=1`, ver [[actualizarEstatusValvulaLocal]]),
+ * se conserva ese estatus local en vez de pisarlo con el valor (viejo) del
+ * servidor — evita perder el cambio del técnico si un sync de catálogo
+ * llega antes de que el cambio de estatus alcance a confirmarse.
+ */
 export async function guardarServicios(db: SQLiteDatabase, servicios: Servicio[]): Promise<void> {
   await db.withTransactionAsync(async () => {
+    const pendientes = await db.getAllAsync<{ id: number; estatus: EstatusValvula }>(
+      'SELECT id, estatus FROM valvulas WHERE estatus_sync_pendiente = 1'
+    );
+    const estatusLocalPendiente = new Map(pendientes.map((p) => [p.id, p.estatus]));
+
     await db.runAsync('DELETE FROM servicios');
     await db.runAsync('DELETE FROM valvulas');
     for (const s of servicios) {
@@ -43,9 +58,10 @@ export async function guardarServicios(db: SQLiteDatabase, servicios: Servicio[]
         [s.id, s.folio, s.nombre, s.fecha, s.estatus]
       );
       for (const v of s.valvulas) {
+        const estatusLocal = estatusLocalPendiente.get(v.id);
         await db.runAsync(
-          'INSERT INTO valvulas (id, servicio_id, codigo, estatus, total_fotos) VALUES (?, ?, ?, ?, ?)',
-          [v.id, s.id, v.codigo, v.estatus, v.total_fotos]
+          'INSERT INTO valvulas (id, servicio_id, codigo, estatus, total_fotos, estatus_sync_pendiente) VALUES (?, ?, ?, ?, ?, ?)',
+          [v.id, s.id, v.codigo, estatusLocal ?? v.estatus, v.total_fotos, estatusLocal ? 1 : 0]
         );
       }
     }
@@ -201,6 +217,35 @@ export async function contarFotosPendientes(db: SQLiteDatabase): Promise<number>
     "SELECT COUNT(*) as n FROM fotos WHERE sync_status IN ('pendiente', 'error')"
   );
   return row?.n ?? 0;
+}
+
+/**
+ * Cambia el estatus de una válvula de forma optimista: se guarda local de
+ * inmediato (se ve reflejado en la UI al instante, haya o no señal) y se
+ * marca `estatus_sync_pendiente=1` para que [[sincronizarEstatusValvulas]]
+ * lo confirme con el servidor en cuanto pueda.
+ */
+export function actualizarEstatusValvulaLocal(
+  db: SQLiteDatabase,
+  valvulaId: number,
+  estatus: EstatusValvula
+): Promise<void> {
+  return db
+    .runAsync('UPDATE valvulas SET estatus = ?, estatus_sync_pendiente = 1 WHERE id = ?', [
+      estatus,
+      valvulaId,
+    ])
+    .then(() => undefined);
+}
+
+export function listarValvulasConEstatusPendiente(db: SQLiteDatabase): Promise<ValvulaLocal[]> {
+  return db.getAllAsync<ValvulaLocal>('SELECT * FROM valvulas WHERE estatus_sync_pendiente = 1');
+}
+
+export function marcarEstatusSincronizado(db: SQLiteDatabase, valvulaId: number): Promise<void> {
+  return db
+    .runAsync('UPDATE valvulas SET estatus_sync_pendiente = 0 WHERE id = ?', [valvulaId])
+    .then(() => undefined);
 }
 
 export async function guardarMeta(db: SQLiteDatabase, key: string, value: string): Promise<void> {

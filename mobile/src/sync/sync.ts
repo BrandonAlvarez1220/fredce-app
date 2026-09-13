@@ -1,10 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { getEtapas, getServicios, subirFoto } from '../api/client';
+import { actualizarEstatusValvula, getEtapas, getServicios, subirFoto } from '../api/client';
 import {
   guardarEtapas,
   guardarMeta,
   guardarServicios,
   listarFotosPendientes,
+  listarValvulasConEstatusPendiente,
+  marcarEstatusSincronizado,
   marcarFotoError,
   marcarFotoSubida,
 } from '../db/repository';
@@ -58,4 +60,25 @@ export async function sincronizarFotosPendientes(
   }
 
   return { subidas, fallidas };
+}
+
+/**
+ * Paso 0 del flujo offline-first (corre ANTES que el catálogo, a propósito):
+ * empuja los cambios de estatus de válvula que el técnico marcó local. Si
+ * corriera después de `sincronizarCatalogos`, un cambio todavía sin
+ * confirmar podría alcanzar a viajar de ida (aunque `guardarServicios` ya
+ * protege contra perderlo, ver su comentario) — mejor intentar confirmarlo
+ * primero. Silencioso si falla (sin señal, o el endpoint aún no existe del
+ * lado de generador-facturas): se reintenta en el siguiente sync.
+ */
+export async function sincronizarEstatusValvulas(db: SQLiteDatabase, token: string): Promise<void> {
+  const pendientes = await listarValvulasConEstatusPendiente(db);
+  for (const v of pendientes) {
+    try {
+      await actualizarEstatusValvula(v.id, v.estatus, token);
+      await marcarEstatusSincronizado(db, v.id);
+    } catch {
+      // se reintenta solo en el siguiente sync — nada que hacer aquí
+    }
+  }
 }

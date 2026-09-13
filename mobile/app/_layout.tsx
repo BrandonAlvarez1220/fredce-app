@@ -1,9 +1,9 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from '../src/auth/AuthContext';
+import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { migrateDbIfNeeded } from '../src/db/schema';
 import { SyncProvider } from '../src/sync/SyncContext';
 import { colors } from '../src/theme';
@@ -16,6 +16,30 @@ function CargandoBaseLocal() {
   );
 }
 
+/**
+ * Antes, "Salir" limpiaba el token pero no navegaba a ningún lado — si ya
+ * estabas dentro de /servicios te quedabas ahí viendo la misma pantalla,
+ * como si el botón no hiciera nada. Este guard corre en cada cambio de
+ * sesión/ruta y fuerza la navegación a /login apenas el token desaparece
+ * (logout, o en el futuro una expiración de sesión), sin importar en qué
+ * pantalla del stack estés parado.
+ */
+function AuthGate() {
+  const { token, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    const enLogin = segments[0] === 'login';
+    if (!token && !enLogin) {
+      router.replace('/login');
+    }
+  }, [token, isLoading, segments, router]);
+
+  return null;
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
@@ -23,6 +47,7 @@ export default function RootLayout() {
         <SQLiteProvider databaseName="fredceapp.db" onInit={migrateDbIfNeeded} useSuspense>
           <AuthProvider>
             <SyncProvider>
+              <AuthGate />
               <Stack
                 screenOptions={{
                   headerStyle: { backgroundColor: colors.oscuro },
