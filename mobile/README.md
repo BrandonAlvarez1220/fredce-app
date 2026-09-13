@@ -148,12 +148,30 @@ Revisando el log del servidor (no algo que yo hubiera reportado), FredceSistema 
 
 **No verificado en dispositivo real** — la API de `expo-image-manipulator` se implementó siguiendo la documentación exacta de esta versión del SDK (el flujo cambió respecto a versiones anteriores), pero no hay forma de confirmar visualmente el resultado ni medir el tamaño final real de una foto de cámara real desde esta sesión.
 
-**Requiere otro endpoint nuevo, todavía sin implementar**: `DELETE /api/tecnico/fotos/{id}` (el `id` del servidor, no el `client_uuid`) — ya se le pidió a FredceSistema, con nota de que eventualmente debería limpiar también el archivo de Drive si ya está conectado de verdad. Mientras no exista, la foto se queda oculta en la app pero técnicamente sigue en el servidor — no rompe nada, solo no se libera del lado de allá todavía.
+## 🐛 BUG CONOCIDO, sin corregir — SQLSTATE[22007] en `fecha_captura` (2026-09-13)
+
+Brandon reportó el error al probar la subida de fotos desde el teléfono. **Causa casi segura, sin corregir todavía** (se deja documentado para retomar mañana, no se tocó código):
+
+- `app/valvulas/[id]/camara.tsx` línea ~93 genera la fecha de captura con `new Date().toISOString()`, que produce algo como `"2026-09-13T20:15:30.123Z"` (formato ISO 8601, con `T`, milisegundos y `Z`).
+- Ese string viaja intacto: `encolarFoto` → SQLite (ahí no truena, es columna `TEXT`) → `sincronizarFotosPendientes` → `subirFoto` (`src/api/client.ts`) → campo `fecha_captura` del `multipart/form-data` → PHP lo inserta tal cual en la columna `DATETIME` de MySQL.
+- MySQL **no acepta** el formato ISO 8601 completo en una columna `DATETIME` (espera `YYYY-MM-DD HH:MM:SS`, sin `T`/milisegundos/`Z`) → de ahí el `SQLSTATE[22007]: Invalid datetime format`.
+
+**Fix propuesto para mañana** (no aplicado): convertir a formato MySQL justo antes de mandarlo por la red, en `subirFoto()` (`src/api/client.ts`), sin tocar cómo se guarda localmente (SQLite no tiene problema con ISO 8601, y es cómodo para `new Date(...)` en JS):
+
+```ts
+function aFechaMysql(iso: string): string {
+  return iso.slice(0, 19).replace('T', ' '); // "2026-09-13T20:15:30.123Z" -> "2026-09-13 20:15:30"
+}
+// y en subirFoto():
+form.append('fecha_captura', aFechaMysql(params.fechaCaptura));
+```
+
+Un cambio de una línea, bajo riesgo. Probablemente vale la pena que FredceSistema también valide/normalice la fecha del lado del PHP como defensa adicional (por si algún día llega otro cliente con otro formato), pero el fix real es este del lado de la app, que es quien genera el string mal formado.
 
 ## Pendiente
 
-- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 5) y los flujos de estatus/borrado de foto — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios, razonamiento de layout/contraste, y pruebas de API por curl (no a través de la UI real).
-- **`DELETE /api/tecnico/fotos/{id}` sin implementar** — bloquea que el borrado de una foto ya subida se confirme con el servidor (ver arriba).
+- **Corregir el bug de `fecha_captura` de arriba** — bloquea que cualquier foto se suba de verdad hoy mismo, es lo primero de mañana.
+- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 5) y los flujos de estatus/borrado/compresión de foto — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios, razonamiento de layout/contraste, y pruebas de API por curl (no a través de la UI real).
 - Manejo de caso "servicio no encontrado en campo" (aún no resuelto en el spec).
 - Reemplazar el ícono de la app (hoy es el genérico de Expo) por uno basado en el logo de marca — el `logo-dark.png` nuevo tampoco sirve directo como adaptive icon (es rectangular, 2823×1053); requiere recortar solo el ícono de la válvula a un cuadrado.
 - Pantalla de detalle de servicio no distingue todavía qué técnico tomó qué foto (a propósito, el spec dice que el reporte no agrupa por técnico) pero podría valer la pena mostrarlo como metadato secundario.
