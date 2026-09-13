@@ -12,8 +12,11 @@ Spec completo: [`docs/spec.md`](docs/spec.md).
 
 ## Relación con otros proyectos
 
-El sistema web de administración (alta de servicios/válvulas, asignación de
-técnicos, catálogo de etapas) es un stack aparte (.NET/C#/SQL Server), llevado
-en la sesión de Claude Code **FredceSistema**. Antes de construir el panel de
-administrador aquí hay que acordar con esa sesión si escribe directo a esta
-MySQL o si esta base se alimenta por sincronización.
+**Corrección (2026-09-12):** no existe un sistema .NET externo para este dominio.
+La sesión hermana de Claude Code **FredceSistema** es en realidad
+`generador-facturas` (PHP + React/Vite/TS + MySQL), un sistema aparte que solo
+genera OC/Cotizaciones para FREDCE VALVES & SERVICES — sin tablas ni overlap
+con servicios/válvulas/técnicos/etapas. Esta base MySQL/PHP es la **única
+fuente de verdad** para ese dominio; el panel de administrador se construye
+aquí mismo, sin capa de sincronización externa. Detalle completo en
+`docs/spec.md` → "Estado de avance".

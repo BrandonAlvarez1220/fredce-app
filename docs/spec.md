@@ -10,10 +10,10 @@ Empresa de reparación/servicio de válvulas. Los técnicos van a campo (plantas
 - **Base de datos:** MySQL en HostGator
 - **Almacenamiento de fotos:** Google Drive (API gratuita en este volumen de uso), organizadas en carpetas automáticas por servicio/válvula. MySQL solo guarda el `drive_file_id` como referencia
 - **Local/offline:** SQLite en el dispositivo (vía expo-sqlite)
-- **Sistema web existente:** ya en desarrollo (stack de Brandon: .NET/C#/SQL Server) — hay que definir si el reporte sigue ahí o se integra directo a la nueva MySQL/PHP
+- **Sistema web existente:** ~~ya en desarrollo (stack de Brandon: .NET/C#/SQL Server)~~ **CORRECCIÓN (2026-09-12):** no existe tal sistema. Se confirmó con la sesión `FredceSistema` que en realidad es `generador-facturas` (PHP 8.1 + React/Vite/TS + MySQL), un sistema aparte que solo genera OC/Cotizaciones para FREDCE VALVES & SERVICES — sin ninguna tabla ni concepto de servicios/válvulas/técnicos/etapas. Ese dominio no existe en ningún otro lado: **esta MySQL/PHP es la única fuente de verdad**, admin incluido. Ver "Estado de avance" abajo.
 
 ## Roles y permisos
-- **Administrador (web):** da de alta servicios (folio autogenerado, ej. `SERV-2026-0042`), registra las válvulas de cada servicio, asigna técnicos, mantiene catálogo de etapas
+- **Administrador (web):** da de alta servicios (folio autogenerado, ej. `SERV-2026-0042`), registra las válvulas de cada servicio, asigna técnicos, mantiene catálogo de etapas. Este panel admin se construye dentro del mismo backend PHP/MySQL de FredceApp (no hay sistema externo que lo cubra — ver corrección arriba)
 - **Técnico (app móvil):** solo consulta servicios/válvulas ya asignados. No puede crear servicios ni válvulas ni escribir nombres libres — elimina el riesgo de traslape/duplicados
 
 ## Modelo de datos (borrador)
@@ -61,7 +61,9 @@ Vive en MySQL, se sincroniza igual que servicios/válvulas (mismo mecanismo offl
 - Autenticación app ↔ API PHP (tokens, sesión por técnico)
 - Autenticación backend ↔ Google Drive API (cuenta de servicio de la empresa)
 - Manejo de caso "servicio no encontrado en campo" (imprevisto no dado de alta a tiempo)
-- Definir si el reporte final vive en el sistema web actual (.NET) o se migra/integra con la nueva base MySQL
+- ~~Definir si el reporte final vive en el sistema web actual (.NET) o se migra/integra con la nueva base MySQL~~ **Resuelto:** el reporte se construye desde esta MySQL/PHP, no existe el sistema .NET.
+- **Abierto:** ¿hay algún punto de contacto real entre FredceApp y `generador-facturas` (ej. una Cotización/OC que deba referenciar un `servicio_id`, o viceversa), o son dos productos totalmente independientes de la misma empresa? Pregunta pendiente de que Brandon la responda.
 
 ## Estado de avance
-- 2026-09-12: primer corte de `backend/` — esquema MySQL completo (`backend/sql/schema.sql`) y API PHP sin dependencias con login de técnico, catálogo de etapas, servicios/válvulas asignados y subida de fotos (Drive stubbeado, ver `backend/README.md`). Pendiente: endpoints de administrador, integración real con Drive, y coordinación con la sesión **FredceSistema** (.NET) sobre dónde vive el reporte final.
+- 2026-09-12: primer corte de `backend/` — esquema MySQL completo (`backend/sql/schema.sql`) y API PHP sin dependencias con login de técnico, catálogo de etapas, servicios/válvulas asignados y subida de fotos (Drive stubbeado, ver `backend/README.md`).
+- 2026-09-12: coordinación con la sesión **FredceSistema** — se aclaró que NO es un sistema .NET, sino `generador-facturas` (PHP+React+MySQL, solo OC/Cotizaciones), sin overlap de dominio. Esta base MySQL/PHP queda confirmada como única fuente de verdad de servicios/válvulas/técnicos/etapas/reporte. Lado admin ya desbloqueado para construirse aquí mismo. Pendiente: endpoints de administrador, integración real con Drive, y la pregunta abierta de arriba.

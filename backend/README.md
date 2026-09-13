@@ -56,5 +56,5 @@ backend/
 ## Pendiente (ver `docs/spec.md` → "Pendiente por definir")
 
 - Subida real a Google Drive (`DriveUploader::upload`, hoy es un stub controlado por `DRIVE_ENABLED`).
-- Endpoints de administrador (alta de servicios/válvulas/asignaciones/etapas) — depende de la decisión de integración con el sistema **.NET existente** (sesión `FredceSistema`): ¿ese admin escribe directo aquí, o esta base se alimenta por sync desde SQL Server?
+- Endpoints de administrador (alta de servicios/válvulas/asignaciones/etapas) — **ya desbloqueado**: se confirmó que no hay sistema externo (`FredceSistema` es `generador-facturas`, un sistema de OC/Cotizaciones sin overlap de dominio), así que esta MySQL/PHP es la única fuente de verdad y el admin se construye directo aquí.
 - Caso "servicio no encontrado en campo".
