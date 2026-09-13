@@ -12,3 +12,11 @@ export const API_BASE_URL: string =
 
 /** Cuánto tiempo (ms) esperar una respuesta antes de considerar "sin señal". */
 export const REQUEST_TIMEOUT_MS = 15000;
+
+/**
+ * Timeout específico para subir fotos — más generoso que el de las llamadas
+ * JSON livianas, porque incluso comprimida (~200-500KB, ver camara.tsx)
+ * sigue siendo el request más pesado, justo en el escenario de señal débil
+ * en campo que le importa a esta app.
+ */
+export const UPLOAD_TIMEOUT_MS = 45000;

@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Crypto from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
@@ -11,6 +12,25 @@ import { useSync } from '../../../src/sync/SyncContext';
 import { colors } from '../../../src/theme';
 
 const CARPETA_FOTOS = 'fredceapp_fotos';
+
+// 1600px de lado mayor + 75% de calidad JPEG deja una foto perfectamente
+// legible para el reporte (no es fotografía de producto, es documentación
+// de servicio) mientras mantiene el archivo predeciblemente ligero — el
+// punto es justo subirla desde plantas con señal débil. Antes de esto, el
+// tamaño dependía por completo de los megapixeles del teléfono (un celular
+// reciente fácil saca 3-8MB por foto); un fix del lado del servidor
+// (subir upload_max_filesize) resolvió el síntoma inmediato, pero esto
+// ataca la causa: subir menos datos siempre, sin importar la cámara.
+const LADO_MAYOR_PX = 1600;
+const CALIDAD_JPEG = 0.75;
+
+async function comprimirFoto(uriOriginal: string): Promise<string> {
+  const contexto = ImageManipulator.manipulate(uriOriginal);
+  contexto.resize({ width: LADO_MAYOR_PX, height: null });
+  const renderizada = await contexto.renderAsync();
+  const resultado = await renderizada.saveAsync({ format: SaveFormat.JPEG, compress: CALIDAD_JPEG });
+  return resultado.uri;
+}
 
 async function guardarFotoPermanente(uriTemporal: string): Promise<string> {
   const archivo = new File(uriTemporal);
@@ -57,9 +77,14 @@ export default function CamaraScreen() {
     if (!cameraRef.current || capturando) return;
     setCapturando(true);
     try {
-      const foto = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      // Calidad alta al capturar (queremos el detalle original); el tamaño
+      // final que de verdad importa para la subida lo controla
+      // comprimirFoto() justo abajo, de forma predecible sin importar los
+      // megapixeles de la cámara del teléfono.
+      const foto = await cameraRef.current.takePictureAsync({ quality: 0.9 });
       if (!foto) return;
-      const uriFinal = await guardarFotoPermanente(foto.uri);
+      const uriComprimida = await comprimirFoto(foto.uri);
+      const uriFinal = await guardarFotoPermanente(uriComprimida);
       await encolarFoto(db, {
         clientUuid: Crypto.randomUUID(),
         valvulaId,

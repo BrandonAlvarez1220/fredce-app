@@ -208,7 +208,15 @@ export default function ValvulaDetalleScreen() {
               <Ionicons name="close" size={14} color="#fff" />
             </Pressable>
             {item.sync_status === 'pendiente' && <Text style={styles.badgePendiente}>Pendiente</Text>}
-            {item.sync_status === 'error' && <Text style={styles.badgeError}>Error</Text>}
+            {item.sync_status === 'error' && (
+              <Pressable
+                onPress={() =>
+                  Alert.alert('No se pudo subir', item.sync_error ?? 'Error desconocido. Se reintenta solo.')
+                }
+              >
+                <Text style={styles.badgeError}>Error (toca para ver)</Text>
+              </Pressable>
+            )}
           </View>
         )}
       />

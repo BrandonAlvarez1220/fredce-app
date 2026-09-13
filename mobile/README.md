@@ -135,6 +135,19 @@ Brandon preguntó "¿y si tomo una mala foto, de borrarla ni hablar, verdad?" �
 - **Nunca subida** (`sync_status` en `pendiente`/`error`): se borra de una vez, local — fila de SQLite + archivo físico (`File.delete()`), sin tocar el servidor.
 - **Ya subida** (`sync_status='subida'`): se oculta de la cuadrícula al instante (nuevo estado `sync_status='eliminar_pendiente'`, filtrado en la UI) y `sincronizarEliminacionesFotos` confirma el borrado con el servidor en el siguiente sync — mismo patrón optimista/offline-first que ya usan las fotos y el estatus de válvula.
 
+**`DELETE /api/tecnico/fotos/{id}`** — ya implementado por FredceSistema y validado por mí contra el servidor real (crear foto → borrar → 200 → confirmar que ya no aparece en `GET /valvulas/{id}` → segundo DELETE → 404). Sin cambios necesarios del lado de la app.
+
+## Bug real encontrado por FredceSistema: fotos fallando por límite de tamaño de PHP (2026-09-13)
+
+Revisando el log del servidor (no algo que yo hubiera reportado), FredceSistema encontró **70 subidas de foto fallidas con 500** antes de que nadie se diera cuenta — causa: `upload_max_filesize` de PHP por defecto es 2M, y una foto de celular real fácil pesa más. Ya lo subieron en el servidor. De mi lado, para atacar la causa (no solo el síntoma) y porque es exactamente el escenario de señal débil que le importa a esta app, se agregó **compresión real antes de subir** (`app/valvulas/[id]/camara.tsx`):
+
+- `expo-image-manipulator` reduce cada foto a máx. 1600px de lado mayor + 75% de calidad JPEG, sin importar cuántos megapixeles tenga la cámara del teléfono (antes: sin resize, solo `quality:0.7` de captura — con cámaras modernas eso todavía puede dar varios MB).
+- Esto no reemplaza el fix del límite del servidor (esa foto igual necesita llegar), pero hace que llegue mucho más rápido y con menos probabilidad de fallar por timeout en campo.
+- También se subió el timeout específico de subida de foto (`UPLOAD_TIMEOUT_MS`) de 15s (compartido con las llamadas JSON livianas) a 45s — una foto, aun comprimida, sigue siendo el request más pesado de la app.
+- Se agregó poder tocar el badge "Error" de una foto para ver el mensaje real (antes solo decía "Error" sin más detalle) — para que un caso como las 70 fallas silenciosas sea visible desde la propia app la próxima vez, no solo desde el log del servidor.
+
+**No verificado en dispositivo real** — la API de `expo-image-manipulator` se implementó siguiendo la documentación exacta de esta versión del SDK (el flujo cambió respecto a versiones anteriores), pero no hay forma de confirmar visualmente el resultado ni medir el tamaño final real de una foto de cámara real desde esta sesión.
+
 **Requiere otro endpoint nuevo, todavía sin implementar**: `DELETE /api/tecnico/fotos/{id}` (el `id` del servidor, no el `client_uuid`) — ya se le pidió a FredceSistema, con nota de que eventualmente debería limpiar también el archivo de Drive si ya está conectado de verdad. Mientras no exista, la foto se queda oculta en la app pero técnicamente sigue en el servidor — no rompe nada, solo no se libera del lado de allá todavía.
 
 ## Pendiente

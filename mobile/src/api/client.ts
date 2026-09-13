@@ -1,5 +1,5 @@
 import { File } from 'expo-file-system';
-import { API_BASE_URL, REQUEST_TIMEOUT_MS } from '../config';
+import { API_BASE_URL, REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from '../config';
 import type {
   ApiError,
   Etapa,
@@ -18,10 +18,16 @@ export class ApiClientError extends Error {
 
 async function request<T>(
   path: string,
-  options: { method?: string; token?: string; json?: unknown; form?: FormData } = {}
+  options: {
+    method?: string;
+    token?: string;
+    json?: unknown;
+    form?: FormData;
+    timeoutMs?: number;
+  } = {}
 ): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT_MS);
 
   const headers: Record<string, string> = {};
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
@@ -129,5 +135,9 @@ export async function subirFoto(
   if (params.orden !== undefined && params.orden !== null) form.append('orden', String(params.orden));
   form.append('file', new File(params.fileUri));
 
-  return request('/fotos', { method: 'POST', token, form });
+  // Timeout más largo que el resto de llamadas (JSON, livianas): incluso
+  // comprimida (ver camara.tsx), una foto sigue siendo el request más
+  // pesado de la app, justo en el escenario de señal débil que le importa
+  // a este flujo — 15s era optimista para eso.
+  return request('/fotos', { method: 'POST', token, form, timeoutMs: UPLOAD_TIMEOUT_MS });
 }
