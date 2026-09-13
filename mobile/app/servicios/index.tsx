@@ -1,11 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { ApiClientError } from '../../src/api/client';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/auth/AuthContext';
-import { leerMeta, listarServicios, type ServicioLocal } from '../../src/db/repository';
-import { META_LAST_SYNC, sincronizarCatalogos, sincronizarFotosPendientes } from '../../src/sync/sync';
+import { listarServicios, type ServicioLocal } from '../../src/db/repository';
+import { useSync } from '../../src/sync/SyncContext';
+import { colors } from '../../src/theme';
 
 const ESTATUS_LABEL: Record<string, string> = {
   pendiente: 'Pendiente',
@@ -16,18 +16,14 @@ const ESTATUS_LABEL: Record<string, string> = {
 
 export default function ServiciosScreen() {
   const db = useSQLiteContext();
-  const { token, tecnico, logout } = useAuth();
+  const { tecnico, logout } = useAuth();
+  const { isSyncing, pendingCount, lastSyncAt, lastResult, lastError, syncNow } = useSync();
   const router = useRouter();
 
   const [servicios, setServicios] = useState<ServicioLocal[]>([]);
-  const [ultimaSync, setUltimaSync] = useState<string | null>(null);
-  const [sincronizando, setSincronizando] = useState(false);
-  const [aviso, setAviso] = useState<string | null>(null);
 
   const cargarDesdeLocal = useCallback(async () => {
-    const [lista, meta] = await Promise.all([listarServicios(db), leerMeta(db, META_LAST_SYNC)]);
-    setServicios(lista);
-    setUltimaSync(meta);
+    setServicios(await listarServicios(db));
   }, [db]);
 
   useFocusEffect(
@@ -36,24 +32,9 @@ export default function ServiciosScreen() {
     }, [cargarDesdeLocal])
   );
 
-  async function sincronizar() {
-    if (!token) return;
-    setSincronizando(true);
-    setAviso(null);
-    try {
-      const resultadoFotos = await sincronizarFotosPendientes(db, token);
-      await sincronizarCatalogos(db, token);
-      await cargarDesdeLocal();
-      if (resultadoFotos.subidas > 0 || resultadoFotos.fallidas > 0) {
-        setAviso(
-          `Fotos subidas: ${resultadoFotos.subidas}${resultadoFotos.fallidas ? ` · pendientes: ${resultadoFotos.fallidas}` : ''}`
-        );
-      }
-    } catch (err) {
-      setAviso(err instanceof ApiClientError ? err.message : 'No se pudo sincronizar. Se reintentará después.');
-    } finally {
-      setSincronizando(false);
-    }
+  async function onRefresh() {
+    await syncNow();
+    await cargarDesdeLocal();
   }
 
   return (
@@ -62,7 +43,7 @@ export default function ServiciosScreen() {
         <View>
           <Text style={styles.saludo}>Hola, {tecnico?.nombre}</Text>
           <Text style={styles.sync}>
-            {ultimaSync ? `Última sync: ${new Date(ultimaSync).toLocaleString()}` : 'Sin sincronizar todavía'}
+            {lastSyncAt ? `Última sync: ${new Date(lastSyncAt).toLocaleString()}` : 'Sin sincronizar todavía'}
           </Text>
         </View>
         <Pressable onPress={logout}>
@@ -70,16 +51,37 @@ export default function ServiciosScreen() {
         </Pressable>
       </View>
 
-      {aviso && <Text style={styles.aviso}>{aviso}</Text>}
+      <View style={styles.barraSync}>
+        <View style={{ flex: 1 }}>
+          {pendingCount > 0 ? (
+            <Text style={styles.pendientesTexto}>
+              📤 {pendingCount} foto{pendingCount === 1 ? '' : 's'} por subir
+            </Text>
+          ) : (
+            <Text style={styles.pendientesTextoOk}>✓ Todo subido</Text>
+          )}
+          {lastError && !isSyncing && <Text style={styles.avisoError}>{lastError}. Se reintenta solo.</Text>}
+          {lastResult && lastResult.subidas > 0 && !isSyncing && (
+            <Text style={styles.avisoOk}>Últimas subidas: {lastResult.subidas}</Text>
+          )}
+        </View>
+        <Pressable style={styles.botonSync} onPress={() => syncNow()} disabled={isSyncing}>
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.navy} />
+          ) : (
+            <Text style={styles.botonSyncTexto}>Sincronizar ahora</Text>
+          )}
+        </Pressable>
+      </View>
 
       <FlatList
         data={servicios}
         keyExtractor={(s) => String(s.id)}
         contentContainerStyle={styles.lista}
-        refreshControl={<RefreshControl refreshing={sincronizando} onRefresh={sincronizar} />}
+        refreshControl={<RefreshControl refreshing={isSyncing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <Text style={styles.vacio}>
-            {sincronizando ? 'Sincronizando…' : 'Sin servicios asignados. Desliza hacia abajo para sincronizar.'}
+            {isSyncing ? 'Sincronizando…' : 'Sin servicios asignados. Desliza hacia abajo para sincronizar.'}
           </Text>
         }
         renderItem={({ item }) => (
@@ -95,30 +97,51 @@ export default function ServiciosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: colors.fondo },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.tarjeta,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.borde,
   },
-  saludo: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
-  sync: { fontSize: 12, color: '#64748b', marginTop: 2 },
-  salir: { color: '#ef4444', fontWeight: '600' },
-  aviso: { backgroundColor: '#fef9c3', color: '#854d0e', padding: 10, textAlign: 'center' },
+  saludo: { fontSize: 18, fontWeight: '700', color: colors.texto },
+  sync: { fontSize: 12, color: colors.textoSecundario, marginTop: 2 },
+  salir: { color: colors.error, fontWeight: '600' },
+  barraSync: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    backgroundColor: colors.tarjeta,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borde,
+  },
+  pendientesTexto: { color: colors.advertencia, fontWeight: '700', fontSize: 13 },
+  pendientesTextoOk: { color: '#16a34a', fontWeight: '600', fontSize: 13 },
+  avisoError: { color: colors.textoSecundario, fontSize: 11, marginTop: 2 },
+  avisoOk: { color: colors.textoSecundario, fontSize: 11, marginTop: 2 },
+  botonSync: {
+    backgroundColor: colors.gold,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minWidth: 130,
+    alignItems: 'center',
+  },
+  botonSyncTexto: { color: colors.navy, fontWeight: '700', fontSize: 12 },
   lista: { padding: 16, gap: 12, flexGrow: 1 },
-  vacio: { textAlign: 'center', color: '#64748b', marginTop: 40 },
+  vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40 },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.tarjeta,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: colors.borde,
   },
-  folio: { fontSize: 12, color: '#2563eb', fontWeight: '700' },
-  nombre: { fontSize: 16, fontWeight: '600', color: '#0f172a', marginTop: 4 },
-  estatus: { fontSize: 13, color: '#64748b', marginTop: 4 },
+  folio: { fontSize: 12, color: colors.navy, fontWeight: '700' },
+  nombre: { fontSize: 16, fontWeight: '600', color: colors.texto, marginTop: 4 },
+  estatus: { fontSize: 13, color: colors.textoSecundario, marginTop: 4 },
 });

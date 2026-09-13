@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import { ApiClientError } from '../src/api/client';
 import { useAuth } from '../src/auth/AuthContext';
+import { colors } from '../src/theme';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -43,13 +45,14 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Text style={styles.titulo}>FredceApp</Text>
+      <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.subtitulo}>Captura de servicio de válvulas</Text>
 
       <View style={styles.form}>
         <TextInput
           style={styles.input}
           placeholder="Usuario"
+          placeholderTextColor={colors.placeholder}
           autoCapitalize="none"
           autoCorrect={false}
           value={usuario}
@@ -58,6 +61,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Contraseña"
+          placeholderTextColor={colors.placeholder}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -66,7 +70,11 @@ export default function LoginScreen() {
         {error && <Text style={styles.error}>{error}</Text>}
 
         <Pressable style={styles.boton} onPress={onSubmit} disabled={cargando}>
-          {cargando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonTexto}>Entrar</Text>}
+          {cargando ? (
+            <ActivityIndicator color={colors.navy} />
+          ) : (
+            <Text style={styles.botonTexto}>Entrar</Text>
+          )}
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -74,25 +82,25 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#0f172a' },
-  titulo: { fontSize: 32, fontWeight: '700', color: '#fff', textAlign: 'center' },
-  subtitulo: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginTop: 4, marginBottom: 32 },
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.navy },
+  logo: { width: '80%', height: 90, alignSelf: 'center' },
+  subtitulo: { fontSize: 14, color: '#cbd5e1', textAlign: 'center', marginTop: 8, marginBottom: 32 },
   form: { gap: 12 },
   input: {
-    backgroundColor: '#1e293b',
-    color: '#fff',
+    backgroundColor: '#ffffff',
+    color: colors.texto,
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
   },
   boton: {
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.gold,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 8,
   },
-  botonTexto: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  error: { color: '#f87171', textAlign: 'center' },
+  botonTexto: { color: colors.navy, fontSize: 16, fontWeight: '700' },
+  error: { color: '#fca5a5', textAlign: 'center' },
 });

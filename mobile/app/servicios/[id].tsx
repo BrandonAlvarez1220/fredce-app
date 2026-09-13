@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { obtenerServicio, listarValvulasDeServicio, type ServicioLocal, type ValvulaLocal } from '../../src/db/repository';
+import { colors } from '../../src/theme';
 
 const ESTATUS_LABEL: Record<string, string> = {
   pendiente: 'Pendiente',
@@ -61,15 +62,22 @@ export default function ServicioDetalleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  folio: { fontSize: 12, color: '#2563eb', fontWeight: '700' },
-  nombre: { fontSize: 18, fontWeight: '700', color: '#0f172a', marginTop: 2 },
-  lista: { padding: 16, gap: 12, flexGrow: 1 },
-  vacio: { textAlign: 'center', color: '#64748b', marginTop: 40 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#e2e8f0' },
-  codigo: { fontSize: 16, fontWeight: '600', color: '#0f172a' },
-  filaInfo: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  estatus: { fontSize: 13, color: '#64748b' },
-  fotos: { fontSize: 13, color: '#2563eb', fontWeight: '600' },
+  container: { flex: 1, backgroundColor: colors.fondo },
+  header: { padding: 16, backgroundColor: colors.tarjeta, borderBottomWidth: 1, borderBottomColor: colors.borde },
+  folio: { fontSize: 11, color: colors.navy, fontWeight: '700' },
+  nombre: { fontSize: 16, fontWeight: '700', color: colors.texto, marginTop: 2 },
+  lista: { padding: 12, gap: 8, flexGrow: 1 },
+  vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40 },
+  card: {
+    backgroundColor: colors.tarjeta,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.borde,
+  },
+  codigo: { fontSize: 14, fontWeight: '600', color: colors.texto },
+  filaInfo: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  estatus: { fontSize: 12, color: colors.textoSecundario },
+  fotos: { fontSize: 12, color: colors.navy, fontWeight: '600' },
 });

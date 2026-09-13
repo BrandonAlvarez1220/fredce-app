@@ -13,6 +13,7 @@ import {
   type FotoLocal,
   type ValvulaLocal,
 } from '../../src/db/repository';
+import { colors } from '../../src/theme';
 
 export default function ValvulaDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -123,32 +124,32 @@ export default function ValvulaDetalleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  codigo: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
-  chips: { padding: 12, gap: 8 },
+  container: { flex: 1, backgroundColor: colors.fondo },
+  header: { padding: 16, backgroundColor: colors.tarjeta, borderBottomWidth: 1, borderBottomColor: colors.borde },
+  codigo: { fontSize: 16, fontWeight: '700', color: colors.texto },
+  chips: { paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#e2e8f0',
-    marginRight: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: colors.borde,
+    marginRight: 6,
   },
-  chipActivo: { backgroundColor: '#2563eb' },
-  chipTexto: { color: '#334155', fontSize: 13, fontWeight: '600' },
+  chipActivo: { backgroundColor: colors.navy },
+  chipTexto: { color: '#334155', fontSize: 12, fontWeight: '600' },
   chipTextoActivo: { color: '#fff' },
   grid: { padding: 8, flexGrow: 1 },
-  vacio: { textAlign: 'center', color: '#64748b', marginTop: 40, paddingHorizontal: 24 },
+  vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40, paddingHorizontal: 24 },
   celda: { flex: 1 / 3, aspectRatio: 1, padding: 4 },
-  miniatura: { flex: 1, borderRadius: 8, backgroundColor: '#e2e8f0' },
+  miniatura: { flex: 1, borderRadius: 8, backgroundColor: colors.borde },
   miniaturaRemota: { alignItems: 'center', justifyContent: 'center' },
-  miniaturaRemotaTexto: { fontSize: 24, color: '#94a3b8' },
+  miniaturaRemotaTexto: { fontSize: 24, color: colors.placeholder },
   badgePendiente: {
     position: 'absolute',
     bottom: 8,
     left: 8,
     right: 8,
-    backgroundColor: '#f59e0b',
+    backgroundColor: colors.advertencia,
     color: '#fff',
     fontSize: 10,
     textAlign: 'center',
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
     bottom: 8,
     left: 8,
     right: 8,
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.error,
     color: '#fff',
     fontSize: 10,
     textAlign: 'center',
@@ -167,10 +168,10 @@ const styles = StyleSheet.create({
   },
   botonCamara: {
     margin: 16,
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.gold,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
   },
-  botonCamaraTexto: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  botonCamaraTexto: { color: colors.navy, fontSize: 16, fontWeight: '700' },
 });

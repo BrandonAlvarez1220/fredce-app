@@ -5,7 +5,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { encolarFoto } from '../../../src/db/repository';
+import { useSync } from '../../../src/sync/SyncContext';
+import { colors } from '../../../src/theme';
 
 const CARPETA_FOTOS = 'fredceapp_fotos';
 
@@ -25,6 +28,8 @@ export default function CamaraScreen() {
   const etapaIdNum = Number(etapaId);
   const db = useSQLiteContext();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { syncNow, refreshPendingCount } = useSync();
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -64,6 +69,8 @@ export default function CamaraScreen() {
         fechaCaptura: new Date().toISOString(),
       });
       setTomadasEnRafaga((n) => n + 1);
+      await refreshPendingCount();
+      syncNow(); // intento silencioso en cuanto hay señal, sin bloquear la ráfaga
     } finally {
       setCapturando(false);
     }
@@ -73,11 +80,11 @@ export default function CamaraScreen() {
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camara} facing="back" />
 
-      <View style={styles.overlaySuperior}>
+      <View style={[styles.overlaySuperior, { top: insets.top + 12 }]}>
         <Text style={styles.contador}>{tomadasEnRafaga > 0 ? `${tomadasEnRafaga} tomada(s)` : ''}</Text>
       </View>
 
-      <View style={styles.overlayInferior}>
+      <View style={[styles.overlayInferior, { bottom: insets.bottom + 24 }]}>
         <Pressable onPress={() => router.back()}>
           <Text style={styles.listo}>Listo</Text>
         </Pressable>
@@ -95,14 +102,13 @@ const styles = StyleSheet.create({
   centrado: { alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
   camara: { flex: 1 },
   mensaje: { color: '#fff', textAlign: 'center', fontSize: 16 },
-  botonPrincipal: { backgroundColor: '#2563eb', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
-  botonPrincipalTexto: { color: '#fff', fontWeight: '600' },
+  botonPrincipal: { backgroundColor: colors.gold, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
+  botonPrincipalTexto: { color: colors.navy, fontWeight: '700' },
   cancelar: { color: '#94a3b8' },
-  overlaySuperior: { position: 'absolute', top: 50, alignSelf: 'center' },
+  overlaySuperior: { position: 'absolute', alignSelf: 'center' },
   contador: { color: '#fff', fontSize: 14, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   overlayInferior: {
     position: 'absolute',
-    bottom: 40,
     left: 0,
     right: 0,
     flexDirection: 'row',
