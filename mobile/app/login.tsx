@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -6,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -20,6 +22,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
+  const [verPassword, setVerPassword] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,46 +48,80 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.subtitulo}>Captura de servicio de válvulas</Text>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* El wordmark del logo es Navy sobre transparente — necesita una
+            base clara detrás para no perderse contra el fondo oscuro de
+            marca, sea cual sea ese fondo. */}
+        <View style={styles.logoCard}>
+          <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+        </View>
+        <Text style={styles.subtitulo}>Captura de servicio de válvulas</Text>
 
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Usuario"
-          placeholderTextColor={colors.placeholder}
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={usuario}
-          onChangeText={setUsuario}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor={colors.placeholder}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Usuario"
+            placeholderTextColor={colors.placeholder}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={usuario}
+            onChangeText={setUsuario}
+          />
 
-        {error && <Text style={styles.error}>{error}</Text>}
+          <View style={styles.inputConIcono}>
+            <TextInput
+              style={styles.inputTexto}
+              placeholder="Contraseña"
+              placeholderTextColor={colors.placeholder}
+              secureTextEntry={!verPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Pressable
+              style={styles.iconoOjo}
+              onPress={() => setVerPassword((v) => !v)}
+              hitSlop={10}
+            >
+              <Ionicons
+                name={verPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color={colors.textoSecundario}
+              />
+            </Pressable>
+          </View>
 
-        <Pressable style={styles.boton} onPress={onSubmit} disabled={cargando}>
-          {cargando ? (
-            <ActivityIndicator color={colors.navy} />
-          ) : (
-            <Text style={styles.botonTexto}>Entrar</Text>
-          )}
-        </Pressable>
-      </View>
+          {error && <Text style={styles.error}>{error}</Text>}
+
+          <Pressable style={styles.boton} onPress={onSubmit} disabled={cargando}>
+            {cargando ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.botonTexto}>Entrar</Text>
+            )}
+          </Pressable>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.navy },
-  logo: { width: '80%', height: 90, alignSelf: 'center' },
-  subtitulo: { fontSize: 14, color: '#cbd5e1', textAlign: 'center', marginTop: 8, marginBottom: 32 },
+  container: { flex: 1, backgroundColor: colors.fondoOscuro },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  logoCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  logo: { width: '100%', height: 70 },
+  subtitulo: { fontSize: 14, color: '#cbd5e1', textAlign: 'center', marginTop: 16, marginBottom: 32 },
   form: { gap: 12 },
   input: {
     backgroundColor: '#ffffff',
@@ -94,6 +131,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
   },
+  inputConIcono: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+  },
+  inputTexto: {
+    flex: 1,
+    color: colors.texto,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+  },
+  iconoOjo: { paddingHorizontal: 14 },
   boton: {
     backgroundColor: colors.gold,
     borderRadius: 10,
@@ -101,6 +152,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  botonTexto: { color: colors.navy, fontSize: 16, fontWeight: '700' },
+  botonTexto: { color: '#fff', fontSize: 16, fontWeight: '700' },
   error: { color: '#fca5a5', textAlign: 'center' },
 });

@@ -68,6 +68,7 @@ export default function ValvulaDetalleScreen() {
 
       <FlatList
         horizontal
+        style={styles.chipsContenedor}
         data={etapas}
         keyExtractor={(e) => String(e.id)}
         showsHorizontalScrollIndicator={false}
@@ -90,6 +91,7 @@ export default function ValvulaDetalleScreen() {
       />
 
       <FlatList
+        style={styles.gridContenedor}
         data={fotosDeEtapa}
         keyExtractor={(f) => f.client_uuid}
         numColumns={3}
@@ -127,7 +129,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.fondo },
   header: { padding: 16, backgroundColor: colors.tarjeta, borderBottomWidth: 1, borderBottomColor: colors.borde },
   codigo: { fontSize: 16, fontWeight: '700', color: colors.texto },
-  chips: { paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
+  // FlatList sin `style` (solo contentContainerStyle) hereda flexGrow y se
+  // estira a ocupar todo el espacio disponible del padre — por eso los chips
+  // se veían gigantes. flexGrow:0 + altura fija lo evita.
+  chipsContenedor: { flexGrow: 0, height: 48 },
+  chips: { paddingHorizontal: 12, alignItems: 'center', gap: 6 },
+  gridContenedor: { flex: 1 },
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 5,

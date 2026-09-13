@@ -13,7 +13,7 @@ original, ahora deprecado/fusionado ahí).
 - **expo-secure-store** para el token de sesión del técnico.
 - **@react-native-community/netinfo** para disparar sync automático al recuperar señal.
 - Sin Redux/Zustand: `AuthContext` + `SyncContext` + hooks de `expo-sqlite` (`useSQLiteContext`) alcanzan para este alcance.
-- Paleta de marca compartida con `generador-facturas` en `src/theme.ts` (Navy `#1B2A4A` / Gold `#F5A820`), mismo logo (`assets/logo.png`, copiado de `generador-facturas/logo_transparente.png`).
+- Paleta de marca en `src/theme.ts`: Navy `#1B2A4A` (color del wordmark del logo) + naranja `#E85C1A` — este último tomado directamente de fredce.com (`getComputedStyle` del botón principal en el sitio real), no del "Gold #F5A820" que se había mencionado antes como ya establecido; ver comentario en `theme.ts`. Mismo logo (`assets/logo.png`, copiado de `generador-facturas/logo_transparente.png`).
 
 ## Estructura
 
@@ -78,11 +78,21 @@ Requiere estar en la misma red que el backend LAN mencionado arriba (o cambiar `
 - `npx expo-doctor` — 21/21 checks.
 - `npx expo export --platform android` — bundlea sin errores de resolución de imports/rutas.
 - Login/etapas/servicios/válvulas/subida de fotos probados de punta a punta contra el backend real (ver memoria del proyecto / `docs/spec.md`).
-- **Probado por Brandon en un teléfono real** (2026-09-12): login y servicio de prueba visibles. Feedback de esa prueba ya corregido en este commit: contraste de la pantalla de login, logo/paleta de marca, tamaño de los chips de etapa, y el botón de cámara tapado por la barra de navegación de Android (faltaba `useSafeAreaInsets`). **Pendiente volver a probar en dispositivo** para confirmar que los 4 ajustes se ven bien en la práctica.
+- **Probado por Brandon en un teléfono real, ronda 1** (2026-09-12): login y servicio de prueba visibles. Corregido: contraste de login, logo/paleta, tamaño de chips, botón de cámara tapado por la barra de Android.
+- **Screenshots en `../testing/` (ronda 2)**: revelaron un bug real que Brandon no había señalado explícitamente — los chips de etapa (pantalla de válvula) se veían como bloques gigantes ocupando media pantalla. Causa: el `FlatList` horizontal de los chips solo tenía `contentContainerStyle`, sin `style` propio, así que heredaba `flexGrow` y se estiraba a ocupar todo el espacio vertical disponible del contenedor. Corregido con `style={{flexGrow:0, height:48}}` explícito.
+- **Feedback de texto, ronda 2** (2026-09-13): logo con contraste perdido en login ("las letras en negro" — el wordmark "FREDCE" es Navy, casi indistinguible sobre el fondo oscuro anterior), teclado que "sube"/reacomoda mal el formulario al enfocar contraseña, y falta de ojito para mostrar/ocultar contraseña. Los tres corregidos (ver abajo). **Pendiente volver a probar en dispositivo** — no se pudo verificar visualmente en un simulador/dispositivo real desde esta sesión, solo por razonamiento de contraste (tarjeta blanca detrás de texto oscuro es un patrón seguro) y por bundle limpio.
+
+### Cómo quedaron los 3 puntos de la ronda 2
+
+- **Logo perdido**: el wordmark del logo es Navy sobre fondo transparente — se pierde contra CUALQUIER fondo oscuro, sin importar el tono exacto. Solución robusta: el logo ahora vive dentro de una tarjeta blanca (`logoCard`) en vez de ir directo sobre el fondo oscuro de la pantalla — así nunca depende de que el fondo detrás sea "suficientemente distinto" del Navy del logo.
+- **Paleta**: se visitó fredce.com y se tomó el color real del botón principal (`rgb(232,92,26)` = `#E85C1A`) y el fondo real (`rgb(10,10,11)` = `#0A0A0B`) vía `getComputedStyle`, en vez de asumir el "Gold #F5A820" que se había mencionado antes — el sitio público real es la referencia más confiable. Login ahora usa ese fondo oscuro + ese naranja en el botón.
+- **Teclado**: se agregó `android.softwareKeyboardLayoutMode: "pan"` en `app.json` (sin esto, Android usa `resize` por defecto, que en un layout centrado verticalmente hace que todo el formulario se re-centre de golpe al abrir el teclado — de ahí el "se sube" raro). Con `pan`, el sistema desplaza la pantalla sin recalcular el layout. También se envolvió el formulario en un `ScrollView` por si el teclado no deja espacio suficiente en pantallas chicas.
+- **Ojito de contraseña**: campo de contraseña ahora tiene un ícono `eye`/`eye-off` de `@expo/vector-icons` (Ionicons) que alterna `secureTextEntry`. Costo: `@expo/vector-icons` + `expo-font` agregan ~2-3MB de fuentes de íconos al bundle (Metro no hace tree-shaking de las fuentes no usadas) — aceptable para una app de distribución interna vía APK, pero si el tamaño del APK importa más adelante vale la pena cambiar a un ícono de texto/emoji simple.
 
 ## Pendiente
 
-- Volver a probar en dispositivo real los ajustes de UI de este commit (contraste, tamaños, safe-area de la cámara).
+- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 y 2) — ninguno se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios y razonamiento de contraste.
 - Manejo de caso "servicio no encontrado en campo" (aún no resuelto en el spec).
 - Reemplazar el ícono de la app (hoy es el genérico de Expo) por uno basado en el logo de marca — no se hizo en este commit porque el logo compartido es rectangular (2823×1053) y no un ícono cuadrado listo para adaptive icon; requiere recortarlo/adaptarlo primero.
 - Pantalla de detalle de servicio no distingue todavía qué técnico tomó qué foto (a propósito, el spec dice que el reporte no agrupa por técnico) pero podría valer la pena mostrarlo como metadato secundario.
+- Evaluar si el resto de la app (headers Navy, etc.) debería alinearse también al fondo oscuro/naranja real de fredce.com, o si el Navy actual se queda — no se tocó por no haber sido parte de este feedback.
