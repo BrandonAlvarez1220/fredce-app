@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Etapa } from '../../src/api/types';
 import { getValvula } from '../../src/api/client';
@@ -20,10 +20,14 @@ import {
 import { useSync } from '../../src/sync/SyncContext';
 import { colors } from '../../src/theme';
 
-const ESTATUS_OPCIONES: { valor: EstatusValvula; etiqueta: string }[] = [
-  { valor: 'pendiente', etiqueta: 'Pendiente' },
-  { valor: 'en_proceso', etiqueta: 'En proceso' },
-  { valor: 'completo', etiqueta: 'Completa' },
+const ESTATUS_OPCIONES: {
+  valor: EstatusValvula;
+  etiqueta: string;
+  icono: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { valor: 'pendiente', etiqueta: 'Pendiente', icono: 'time-outline' },
+  { valor: 'en_proceso', etiqueta: 'En proceso', icono: 'construct-outline' },
+  { valor: 'completo', etiqueta: 'Completa', icono: 'checkmark-circle' },
 ];
 
 export default function ValvulaDetalleScreen() {
@@ -77,6 +81,26 @@ export default function ValvulaDetalleScreen() {
     syncNow(); // intenta confirmarlo ya mismo si hay señal; si no, queda pendiente
   }
 
+  // Marcar como completa es la acción con más peso (cierra el trabajo en
+  // esa válvula) — pedir confirmación evita que se marque por accidente con
+  // un toque de más, a diferencia de pendiente/en_proceso que son estados
+  // de trabajo normales y se cambian libremente.
+  function onPressEstatus(opcion: (typeof ESTATUS_OPCIONES)[number]) {
+    if (!valvula || valvula.estatus === opcion.valor) return;
+    if (opcion.valor === 'completo') {
+      Alert.alert(
+        'Marcar como completa',
+        `¿${valvula.codigo} ya está lista? Podrás seguir agregando fotos después si hace falta.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Confirmar', onPress: () => cambiarEstatus('completo') },
+        ]
+      );
+    } else {
+      cambiarEstatus(opcion.valor);
+    }
+  }
+
   const fotosDeEtapa = fotos.filter((f) => f.etapa_id === etapaSeleccionada);
 
   return (
@@ -87,20 +111,28 @@ export default function ValvulaDetalleScreen() {
 
       {/* Cómo se marca que ya se terminó con la válvula (antes no había
           forma de cambiar esto desde la app, solo se veía "Pendiente"). */}
-      <View style={styles.estatusFila}>
-        {ESTATUS_OPCIONES.map((op) => {
-          const activo = valvula?.estatus === op.valor;
-          return (
-            <Pressable
-              key={op.valor}
-              style={[styles.estatusBoton, activo && styles.estatusBotonActivo]}
-              onPress={() => cambiarEstatus(op.valor)}
-            >
-              <Text style={[styles.estatusTexto, activo && styles.estatusTextoActivo]}>{op.etiqueta}</Text>
-            </Pressable>
-          );
-        })}
-        {valvula?.estatus_sync_pendiente === 1 && <Text style={styles.estatusPendienteIcono}>⏳</Text>}
+      <View style={styles.estatusCard}>
+        <View style={styles.estatusEncabezado}>
+          <Text style={styles.estatusLabel}>ESTATUS DE LA VÁLVULA</Text>
+          {valvula?.estatus_sync_pendiente === 1 && (
+            <Text style={styles.estatusGuardando}>Guardando…</Text>
+          )}
+        </View>
+        <View style={styles.segmentado}>
+          {ESTATUS_OPCIONES.map((op) => {
+            const activo = valvula?.estatus === op.valor;
+            return (
+              <Pressable
+                key={op.valor}
+                style={[styles.segmento, activo && styles.segmentoActivo]}
+                onPress={() => onPressEstatus(op)}
+              >
+                <Ionicons name={op.icono} size={15} color={activo ? '#fff' : colors.textoSecundario} />
+                <Text style={[styles.segmentoTexto, activo && styles.segmentoTextoActivo]}>{op.etiqueta}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <FlatList
@@ -169,27 +201,54 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.fondo },
   header: { padding: 16, backgroundColor: colors.tarjeta, borderBottomWidth: 1, borderBottomColor: colors.borde },
   codigo: { fontSize: 16, fontWeight: '700', color: colors.texto },
-  estatusFila: {
+  estatusCard: {
+    margin: 12,
+    marginBottom: 4,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: colors.tarjeta,
+    borderWidth: 1,
+    borderColor: colors.borde,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
+  estatusEncabezado: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  estatusLabel: { fontSize: 11, fontWeight: '700', color: colors.textoSecundario, letterSpacing: 0.5 },
+  estatusGuardando: { fontSize: 11, color: colors.naranja, fontWeight: '600' },
+  segmentado: {
+    flexDirection: 'row',
+    backgroundColor: colors.fondo,
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
+  },
+  segmento: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: colors.tarjeta,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borde,
-  },
-  estatusBoton: {
-    flex: 1,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 9,
     borderRadius: 8,
-    backgroundColor: colors.borde,
-    alignItems: 'center',
   },
-  estatusBotonActivo: { backgroundColor: colors.naranja },
-  estatusTexto: { fontSize: 12, fontWeight: '600', color: '#334155' },
-  estatusTextoActivo: { color: '#fff' },
-  estatusPendienteIcono: { fontSize: 14 },
+  segmentoActivo: {
+    backgroundColor: colors.naranja,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  segmentoTexto: { fontSize: 12, fontWeight: '600', color: colors.textoSecundario },
+  segmentoTextoActivo: { color: '#fff' },
   // FlatList sin `style` (solo contentContainerStyle) hereda flexGrow y se
   // estira a ocupar todo el espacio disponible del padre — por eso los chips
   // se veían gigantes. flexGrow:0 + altura fija lo evita.
@@ -206,7 +265,7 @@ const styles = StyleSheet.create({
   chipActivo: { backgroundColor: colors.naranja },
   chipTexto: { color: '#334155', fontSize: 12, fontWeight: '600' },
   chipTextoActivo: { color: '#fff' },
-  grid: { padding: 8, paddingBottom: 96, flexGrow: 1 }, // espacio para que el FAB no tape la última fila
+  grid: { padding: 8, paddingBottom: 112, flexGrow: 1 }, // espacio para que el FAB no tape la última fila
   vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40, paddingHorizontal: 24 },
   celda: { flex: 1 / 3, aspectRatio: 1, padding: 4 },
   miniatura: { flex: 1, borderRadius: 8, backgroundColor: colors.borde },
@@ -237,7 +296,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 24,
-    bottom: 24,
+    bottom: 40,
     width: 60,
     height: 60,
     borderRadius: 30,

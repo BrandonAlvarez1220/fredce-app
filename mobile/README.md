@@ -121,6 +121,13 @@ No existía forma de cambiar el estatus de una válvula desde la app — nacía 
 
 **`PUT /api/tecnico/valvulas/{id}/estatus`** — ya implementado por FredceSistema y validado por mí directo contra el servidor LAN real (`tecnico1`, cambio válido, 422 en estatus fuera del ENUM, 404 en válvula no asignada, 401 sin token — todo correcto). El cliente de la app ya apunta ahí, no requiere ningún cambio adicional.
 
+## Ronda 5 (2026-09-13, screenshot `../testing/3.jpeg`)
+
+Feedback tras ver la ronda 4 ya corregida: "el FAB debería estar un poco más arriba" y, sobre el selector de estatus, "no me termina de convencer, se ve muy simple, muy modificable" (parafraseado — costó ponerlo en palabras, lo cual es una señal en sí misma de que le faltaba peso visual).
+
+- **FAB un poco más arriba**: se subió de `bottom:24` a `bottom:40`. Nota aparte, no un cambio de código: en el screenshot se ve una barra de 3 íconos (☰ ⭕ ‹) pegada hasta abajo y un círculo con engrane flotando cerca del header — ninguno de los dos es parte de la UI de esta app (no hay ningún ícono de engrane en ningún archivo). Todo apunta a que son los controles flotantes de la app/herramienta usada para grabar la pantalla, no la barra de navegación real de Android. Si es así, ningún ajuste de `SafeAreaView`/insets del lado de la app puede "arreglarlo" porque no es parte del sistema operativo — vale la pena confirmar probando sin grabar pantalla (captura con el botón físico de encendido+volumen) antes de seguir ajustando este punto a ciegas.
+- **Selector de estatus "muy simple/modificable"**: se rediseñó de 3 botones sueltos a un control segmentado dentro de una tarjeta propia (sombra, borde, radio de esquina), con una etiqueta "ESTATUS DE LA VÁLVULA" arriba para darle contexto, e íconos por opción (reloj/herramienta/palomita, `@expo/vector-icons`) en vez de solo texto. También se agregó **confirmación** (`Alert.alert`) específicamente al marcar "Completa" — es la acción más definitiva (cierra el trabajo en esa válvula), así que ya no se puede activar con un solo toque accidental como las otras dos; "Pendiente"/"En proceso" siguen siendo de un toque, por ser estados de trabajo normales y reversibles.
+
 ## Pendiente
 
 - Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 4), y ahora también el flujo completo de cambio de estatus desde la app misma — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios, razonamiento de layout/contraste, y pruebas de API por curl (no a través de la UI real).
