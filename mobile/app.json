@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "FredceApp Técnico",
+    "slug": "fredceapp-tecnico",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "fredceapp",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Se usa la cámara para fotografiar válvulas durante el servicio."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["CAMERA"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Se usa la cámara para fotografiar válvulas durante el servicio."
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "http://192.168.0.18:8000/api/tecnico"
+    }
+  }
+}

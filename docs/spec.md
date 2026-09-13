@@ -66,9 +66,12 @@ Decisión de auth acordada entre ambas sesiones: el técnico/app móvil sigue co
 - Autenticación backend ↔ Google Drive API (cuenta de servicio de la empresa) — **no implementada todavía en ningún lado**, solo diseñada (stub en el backend deprecado)
 - Manejo de caso "servicio no encontrado en campo" (imprevisto no dado de alta a tiempo)
 - Punto de contacto entre el dominio de servicios y el de OC/Cotizaciones (ej. que un servicio referencie una Cotización) — no se ha vuelto a plantear tras decidir la fusión; puede resolverse solo, al vivir ya en el mismo sistema
-- URL base / endpoints reales de `generador-facturas` para que la app Expo apunte ahí (pendiente de que esa sesión los tenga listos, aunque sea en ambiente de pruebas)
+- Probar `mobile/` en un dispositivo/emulador real (cámara, permisos, UI) — todavía no se ha corrido en un dispositivo físico
+- Reintentos automáticos en segundo plano de la subida de fotos (hoy es manual, con pull-to-refresh)
 
 ## Estado de avance
 - 2026-09-12: primer corte de `backend/` — esquema MySQL completo (`backend/sql/schema.sql`) y API PHP sin dependencias con login de técnico, catálogo de etapas, servicios/válvulas asignados y subida de fotos (Drive stubbeado).
 - 2026-09-12: coordinación con la sesión **FredceSistema** — se aclaró que NO es un sistema .NET, sino `generador-facturas` (PHP+React+MySQL, solo OC/Cotizaciones).
-- 2026-09-12: **pivote confirmado por Brandon** — `generador-facturas` se vuelve el sistema central; se le entregó el schema, los 5 contratos de endpoints, el estado real (no implementado) de Drive, y se acordó el esquema de auth dual. `backend/` de esta sesión queda deprecado como referencia. Foco de FredceApp pasa a ser exclusivamente `mobile/` (Expo), pendiente de la URL base real del backend fusionado.
+- 2026-09-12: **pivote confirmado por Brandon** — `generador-facturas` se vuelve el sistema central; se le entregó el schema, los 5 contratos de endpoints, el estado real (no implementado) de Drive, y se acordó el esquema de auth dual. `backend/` de esta sesión queda deprecado como referencia.
+- 2026-09-12: **integración validada end-to-end** — se instaló MariaDB local, se cargó el `database/schema.sql` fusionado de `generador-facturas` y se probaron los 5 endpoints reales (login, etapas, servicios, válvula, subida de foto con idempotencia por `client_uuid`) contra MySQL de verdad. Contratos confirmados sin cambios, solo el prefijo `/api/tecnico/*`.
+- 2026-09-12: **`mobile/` creado** — Expo SDK 57 + TypeScript + Expo Router, SQLite local (cache + cola de subida offline-first), cámara con guardado permanente antes de subir, login con token persistido, y las 3 pantallas de técnico funcionando contra los contratos ya validados. Apunta a `http://192.168.0.18:8000/api/tecnico` (LAN de pruebas de generador-facturas, ver `mobile/README.md`). Verificado con `tsc`, `expo-doctor` y `expo export`; **no probado aún en dispositivo/emulador real**.

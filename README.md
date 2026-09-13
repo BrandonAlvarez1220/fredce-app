@@ -7,7 +7,7 @@ Spec completo: [`docs/spec.md`](docs/spec.md).
 
 ## Estructura
 
-- `mobile/` — app React Native/Expo para técnicos. **En construcción.** Consume la API de `generador-facturas`.
+- `mobile/` — app React Native/Expo para técnicos. **Scaffold funcional**, ver `mobile/README.md`. Consume la API de `generador-facturas` (`/api/tecnico/*`, integración ya validada end-to-end).
 - `backend/` — API REST en PHP + esquema MySQL construida en esta sesión. **Deprecado** (ver `backend/README.md`): su schema y contratos de endpoints ya se integraron a `generador-facturas`, que ahora es el backend central. Se conserva solo como referencia histórica.
 
 ## Relación con otros proyectos
