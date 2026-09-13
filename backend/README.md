@@ -1,5 +1,14 @@
 # FredceApp — backend
 
+> **⚠️ DEPRECADO (2026-09-12):** Brandon confirmó que el backend/BD central de
+> todo FREDCE se fusiona dentro de `generador-facturas` (sesión de Claude Code
+> `FredceSistema`) — una sola base de datos, un solo backend PHP. Este
+> `backend/` deja de tener desarrollo activo; se conserva en el repo solo como
+> referencia histórica (el schema y los contratos de endpoints de abajo ya se
+> le pasaron completos a esa sesión para integrarlos). El trabajo de aquí en
+> adelante en FredceApp es únicamente la app Expo (`mobile/`), apuntando a la
+> API de `generador-facturas`. Ver `../docs/spec.md` → "Estado de avance".
+
 API REST en PHP puro (sin Composer/framework) + MySQL, pensado para correr
 tal cual en hosting compartido (HostGator). Ver el spec completo en
 `../docs/spec.md`.

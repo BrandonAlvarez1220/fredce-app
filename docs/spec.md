@@ -56,14 +56,19 @@ Vive en MySQL, se sincroniza igual que servicios/válvulas (mismo mecanismo offl
 2. Detalle de servicio — lista de válvulas con estatus (pendiente/en proceso/completa) y conteo de fotos
 3. Detalle de válvula — selector de etapa (chips) + cuadrícula de fotos tomadas + botón de cámara
 
+## Arquitectura final confirmada (2026-09-12)
+`generador-facturas` (sesión de Claude Code **FredceSistema**, PHP 8.1 + React/Vite/TS + MySQL) es **el sistema central de FREDCE**: una sola base de datos, un solo backend PHP. Absorbe el dominio completo de servicios/válvulas/técnicos/etapas/fotos diseñado en este documento. El `backend/` construido en esta sesión (FredceApp) queda **deprecado** — su schema y los contratos exactos de los 5 endpoints ya se le entregaron a esa sesión para integrarlos sin romper la app. FredceApp de aquí en adelante es **solo la app móvil Expo**, consumiendo la API de `generador-facturas`.
+
+Decisión de auth acordada entre ambas sesiones: el técnico/app móvil sigue con bearer token opaco (tabla `api_tokens` + `tecnico_dispositivos`, pensado para sesiones de hasta 30 días sin señal); el JWT que ya existe en `generador-facturas` se queda para el login del admin web. Son dos actores distintos, no se duplica el mismo problema.
+
 ## Pendiente por definir
-- Diseño de pantallas del lado administrador (web)
-- Autenticación app ↔ API PHP (tokens, sesión por técnico)
-- Autenticación backend ↔ Google Drive API (cuenta de servicio de la empresa)
+- Diseño de pantallas del lado administrador (ahora en el React de `generador-facturas`, no aquí)
+- Autenticación backend ↔ Google Drive API (cuenta de servicio de la empresa) — **no implementada todavía en ningún lado**, solo diseñada (stub en el backend deprecado)
 - Manejo de caso "servicio no encontrado en campo" (imprevisto no dado de alta a tiempo)
-- ~~Definir si el reporte final vive en el sistema web actual (.NET) o se migra/integra con la nueva base MySQL~~ **Resuelto:** el reporte se construye desde esta MySQL/PHP, no existe el sistema .NET.
-- **Abierto:** ¿hay algún punto de contacto real entre FredceApp y `generador-facturas` (ej. una Cotización/OC que deba referenciar un `servicio_id`, o viceversa), o son dos productos totalmente independientes de la misma empresa? Pregunta pendiente de que Brandon la responda.
+- Punto de contacto entre el dominio de servicios y el de OC/Cotizaciones (ej. que un servicio referencie una Cotización) — no se ha vuelto a plantear tras decidir la fusión; puede resolverse solo, al vivir ya en el mismo sistema
+- URL base / endpoints reales de `generador-facturas` para que la app Expo apunte ahí (pendiente de que esa sesión los tenga listos, aunque sea en ambiente de pruebas)
 
 ## Estado de avance
-- 2026-09-12: primer corte de `backend/` — esquema MySQL completo (`backend/sql/schema.sql`) y API PHP sin dependencias con login de técnico, catálogo de etapas, servicios/válvulas asignados y subida de fotos (Drive stubbeado, ver `backend/README.md`).
-- 2026-09-12: coordinación con la sesión **FredceSistema** — se aclaró que NO es un sistema .NET, sino `generador-facturas` (PHP+React+MySQL, solo OC/Cotizaciones), sin overlap de dominio. Esta base MySQL/PHP queda confirmada como única fuente de verdad de servicios/válvulas/técnicos/etapas/reporte. Lado admin ya desbloqueado para construirse aquí mismo. Pendiente: endpoints de administrador, integración real con Drive, y la pregunta abierta de arriba.
+- 2026-09-12: primer corte de `backend/` — esquema MySQL completo (`backend/sql/schema.sql`) y API PHP sin dependencias con login de técnico, catálogo de etapas, servicios/válvulas asignados y subida de fotos (Drive stubbeado).
+- 2026-09-12: coordinación con la sesión **FredceSistema** — se aclaró que NO es un sistema .NET, sino `generador-facturas` (PHP+React+MySQL, solo OC/Cotizaciones).
+- 2026-09-12: **pivote confirmado por Brandon** — `generador-facturas` se vuelve el sistema central; se le entregó el schema, los 5 contratos de endpoints, el estado real (no implementado) de Drive, y se acordó el esquema de auth dual. `backend/` de esta sesión queda deprecado como referencia. Foco de FredceApp pasa a ser exclusivamente `mobile/` (Expo), pendiente de la URL base real del backend fusionado.

@@ -1,22 +1,21 @@
 # FredceApp
 
-App de captura de fotos de servicio de válvulas (técnicos en campo, offline-first)
-+ backend PHP/MySQL + almacenamiento en Google Drive.
+App de captura de fotos de servicio de válvulas (técnicos en campo, offline-first),
+consumiendo el backend central de FREDCE.
 
 Spec completo: [`docs/spec.md`](docs/spec.md).
 
 ## Estructura
 
-- `backend/` — API REST en PHP + esquema MySQL (ver `backend/README.md`). **Empezado.**
-- `mobile/` — app React Native/Expo para técnicos. **Pendiente.**
+- `mobile/` — app React Native/Expo para técnicos. **En construcción.** Consume la API de `generador-facturas`.
+- `backend/` — API REST en PHP + esquema MySQL construida en esta sesión. **Deprecado** (ver `backend/README.md`): su schema y contratos de endpoints ya se integraron a `generador-facturas`, que ahora es el backend central. Se conserva solo como referencia histórica.
 
 ## Relación con otros proyectos
 
-**Corrección (2026-09-12):** no existe un sistema .NET externo para este dominio.
-La sesión hermana de Claude Code **FredceSistema** es en realidad
-`generador-facturas` (PHP + React/Vite/TS + MySQL), un sistema aparte que solo
-genera OC/Cotizaciones para FREDCE VALVES & SERVICES — sin tablas ni overlap
-con servicios/válvulas/técnicos/etapas. Esta base MySQL/PHP es la **única
-fuente de verdad** para ese dominio; el panel de administrador se construye
-aquí mismo, sin capa de sincronización externa. Detalle completo en
+**Decisión confirmada por Brandon (2026-09-12):** todo FREDCE se centraliza en
+`generador-facturas` (sesión de Claude Code **FredceSistema**, stack PHP +
+React/Vite/TS + MySQL) — una sola base de datos, un solo backend. Absorbe el
+dominio de servicios/válvulas/técnicos/etapas/fotos que se diseñó originalmente
+aquí. Esta sesión (FredceApp) se enfoca de ahora en adelante solo en la app
+móvil Expo. Detalle completo y contratos ya entregados en
 `docs/spec.md` → "Estado de avance".
