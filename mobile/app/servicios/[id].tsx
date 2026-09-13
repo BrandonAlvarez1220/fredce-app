@@ -64,7 +64,7 @@ export default function ServicioDetalleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.fondo },
   header: { padding: 16, backgroundColor: colors.tarjeta, borderBottomWidth: 1, borderBottomColor: colors.borde },
-  folio: { fontSize: 11, color: colors.navy, fontWeight: '700' },
+  folio: { fontSize: 11, color: colors.naranja, fontWeight: '700' },
   nombre: { fontSize: 16, fontWeight: '700', color: colors.texto, marginTop: 2 },
   lista: { padding: 12, gap: 8, flexGrow: 1 },
   vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40 },
@@ -79,5 +79,5 @@ const styles = StyleSheet.create({
   codigo: { fontSize: 14, fontWeight: '600', color: colors.texto },
   filaInfo: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   estatus: { fontSize: 12, color: colors.textoSecundario },
-  fotos: { fontSize: 12, color: colors.navy, fontWeight: '600' },
+  fotos: { fontSize: 12, color: colors.naranja, fontWeight: '600' },
 });

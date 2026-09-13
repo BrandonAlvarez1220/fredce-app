@@ -67,7 +67,7 @@ export default function ServiciosScreen() {
         </View>
         <Pressable style={styles.botonSync} onPress={() => syncNow()} disabled={isSyncing}>
           {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.navy} />
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
             <Text style={styles.botonSyncTexto}>Sincronizar ahora</Text>
           )}
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     minWidth: 130,
     alignItems: 'center',
   },
-  botonSyncTexto: { color: colors.navy, fontWeight: '700', fontSize: 12 },
+  botonSyncTexto: { color: '#fff', fontWeight: '700', fontSize: 12 },
   lista: { padding: 16, gap: 12, flexGrow: 1 },
   vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40 },
   card: {
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borde,
   },
-  folio: { fontSize: 12, color: colors.navy, fontWeight: '700' },
+  folio: { fontSize: 12, color: colors.naranja, fontWeight: '700' },
   nombre: { fontSize: 16, fontWeight: '600', color: colors.texto, marginTop: 4 },
   estatus: { fontSize: 13, color: colors.textoSecundario, marginTop: 4 },
 });

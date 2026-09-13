@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { encolarFoto } from '../../../src/db/repository';
 import { useSync } from '../../../src/sync/SyncContext';
 import { colors } from '../../../src/theme';
@@ -28,7 +28,6 @@ export default function CamaraScreen() {
   const etapaIdNum = Number(etapaId);
   const db = useSQLiteContext();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { syncNow, refreshPendingCount } = useSync();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -42,7 +41,7 @@ export default function CamaraScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={[styles.container, styles.centrado]}>
+      <SafeAreaView style={[styles.container, styles.centrado]}>
         <Text style={styles.mensaje}>Se necesita permiso de cámara para tomar fotos de la válvula.</Text>
         <Pressable style={styles.botonPrincipal} onPress={requestPermission}>
           <Text style={styles.botonPrincipalTexto}>Dar permiso</Text>
@@ -50,7 +49,7 @@ export default function CamaraScreen() {
         <Pressable onPress={() => router.back()}>
           <Text style={styles.cancelar}>Cancelar</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -76,16 +75,25 @@ export default function CamaraScreen() {
     }
   }
 
+  // A propósito NO se usa position:absolute + insets a mano para la barra
+  // de controles: eso dependía de leer bien insets.bottom, y en la práctica
+  // seguía quedando tapada por la barra de navegación de Android en algunos
+  // dispositivos. En vez de eso, la barra vive en flujo normal (columna,
+  // debajo de la cámara) dentro de un SafeAreaView — así es imposible que
+  // el sistema la tape, sea cual sea el valor real del inset.
   return (
-    <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camara} facing="back" />
-
-      <View style={[styles.overlaySuperior, { top: insets.top + 12 }]}>
-        <Text style={styles.contador}>{tomadasEnRafaga > 0 ? `${tomadasEnRafaga} tomada(s)` : ''}</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.zonaCamara}>
+        <CameraView ref={cameraRef} style={styles.camara} facing="back" />
+        {tomadasEnRafaga > 0 && (
+          <View style={styles.overlaySuperior}>
+            <Text style={styles.contador}>{tomadasEnRafaga} tomada(s)</Text>
+          </View>
+        )}
       </View>
 
-      <View style={[styles.overlayInferior, { bottom: insets.bottom + 24 }]}>
-        <Pressable onPress={() => router.back()}>
+      <View style={styles.barraControles}>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={styles.listo}>Listo</Text>
         </Pressable>
 
@@ -93,28 +101,30 @@ export default function CamaraScreen() {
 
         <View style={{ width: 60 }} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   centrado: { alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
+  zonaCamara: { flex: 1 },
   camara: { flex: 1 },
   mensaje: { color: '#fff', textAlign: 'center', fontSize: 16 },
-  botonPrincipal: { backgroundColor: colors.gold, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
-  botonPrincipalTexto: { color: colors.navy, fontWeight: '700' },
+  botonPrincipal: { backgroundColor: colors.naranja, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
+  botonPrincipalTexto: { color: '#fff', fontWeight: '700' },
   cancelar: { color: '#94a3b8' },
-  overlaySuperior: { position: 'absolute', alignSelf: 'center' },
+  overlaySuperior: { position: 'absolute', top: 12, alignSelf: 'center' },
   contador: { color: '#fff', fontSize: 14, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  overlayInferior: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
+  // Barra de controles en flujo normal (no absoluta): siempre visible,
+  // nunca puede quedar detrás de la barra de navegación del sistema.
+  barraControles: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 32,
+    paddingVertical: 20,
+    backgroundColor: '#000',
   },
   listo: { color: '#fff', fontSize: 16, fontWeight: '600', width: 60 },
   disparador: {

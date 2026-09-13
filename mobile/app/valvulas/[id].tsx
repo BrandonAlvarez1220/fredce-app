@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borde,
     marginRight: 6,
   },
-  chipActivo: { backgroundColor: colors.navy },
+  chipActivo: { backgroundColor: colors.naranja },
   chipTexto: { color: '#334155', fontSize: 12, fontWeight: '600' },
   chipTextoActivo: { color: '#fff' },
   grid: { padding: 8, flexGrow: 1 },
@@ -180,5 +180,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  botonCamaraTexto: { color: colors.navy, fontSize: 16, fontWeight: '700' },
+  botonCamaraTexto: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

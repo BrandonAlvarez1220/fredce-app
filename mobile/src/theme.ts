@@ -1,20 +1,22 @@
 /**
- * Paleta de marca de FREDCE.
+ * Paleta de marca de FREDCE — CONFIRMADA por Brandon 2026-09-13: Negro +
+ * Naranja, la del sitio público real (fredce.com), sin azul. Ambos valores
+ * se tomaron con `getComputedStyle` directo del sitio (no a ojo):
+ * fondo `rgb(10,10,11)`, botón principal `rgb(232,92,26)`.
  *
- * `navy` sale del logo (color del wordmark "FREDCE"). `naranja` se tomó
- * directamente del sitio real fredce.com (rgb(232,92,26) medido con
- * getComputedStyle del botón principal) — es más naranja que el "Gold
- * #F5A820" que se mencionó como paleta ya establecida; se usa este por ser
- * la fuente más autoritativa (el sitio público en vivo) y porque Brandon
- * autorizó tomarlo de ahí. Se mantiene el nombre `gold` en el código para
- * no tener que tocar cada uso, aunque el valor real es naranja.
- * `fondoOscuro` también sale del sitio (rgb(10,10,11), body background).
+ * `navy` existió en una versión anterior (se pensó que era la paleta
+ * "oficial" por el color del wordmark del logo) — ya NO se usa como color
+ * de interfaz (headers, chips, acentos). Se deja aquí solo por si algo del
+ * logo original (assets/logo.png, pensado para fondo claro) lo necesita;
+ * el resto de la app usa `oscuro` (chrome/estructura) y `naranja` (único
+ * acento) — dos colores, no tres.
  */
 export const colors = {
-  navy: '#1B2A4A',
-  navyClaro: '#28406e',
-  gold: '#E85C1A', // naranja real de fredce.com, no dorado — ver nota arriba
-  fondoOscuro: '#0A0A0B', // background real del sitio
+  oscuro: '#0A0A0B', // headers, fondo de pantallas oscuras (antes: navy)
+  naranja: '#E85C1A', // único acento: botones, selección activa, texto destacado
+  navy: '#1B2A4A', // legacy — no usar en UI nueva, ver nota arriba
+  gold: '#E85C1A', // alias legacy de `naranja`, mismo valor — evita romper imports viejos
+  fondoOscuro: '#0A0A0B', // alias legacy de `oscuro`
   fondo: '#f8fafc',
   tarjeta: '#ffffff',
   borde: '#e2e8f0',

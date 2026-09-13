@@ -25,7 +25,7 @@ export default function RootLayout() {
             <SyncProvider>
               <Stack
                 screenOptions={{
-                  headerStyle: { backgroundColor: colors.navy },
+                  headerStyle: { backgroundColor: colors.oscuro },
                   headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: '600' },
                 }}
@@ -35,9 +35,13 @@ export default function RootLayout() {
                 <Stack.Screen name="servicios/index" options={{ title: 'Mis servicios' }} />
                 <Stack.Screen name="servicios/[id]" options={{ title: 'Servicio' }} />
                 <Stack.Screen name="valvulas/[id]" options={{ title: 'Válvula' }} />
+                {/* Pantalla normal (no modal): en Android, los modales a
+                    veces no propagan bien los safe-area insets, que es
+                    justo lo que necesitamos aquí para no tapar el botón
+                    de disparo con la barra de navegación del sistema. */}
                 <Stack.Screen
                   name="valvulas/[id]/camara"
-                  options={{ presentation: 'fullScreenModal', headerShown: false }}
+                  options={{ headerShown: false, animation: 'slide_from_bottom' }}
                 />
               </Stack>
             </SyncProvider>

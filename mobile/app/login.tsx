@@ -53,12 +53,11 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* El wordmark del logo es Navy sobre transparente — necesita una
-            base clara detrás para no perderse contra el fondo oscuro de
-            marca, sea cual sea ese fondo. */}
-        <View style={styles.logoCard}>
-          <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        </View>
+        {/* Variante del logo con el wordmark recoloreado a blanco (el
+            original es Navy, pensado para fondos claros — sobre una tarjeta
+            blanca se veía como un parche pegado). Ver assets/logo-dark.png
+            y la nota en el README sobre cómo se generó. */}
+        <Image source={require('../assets/logo-dark.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.subtitulo}>Captura de servicio de válvulas</Text>
 
         <View style={styles.form}>
@@ -112,15 +111,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.fondoOscuro },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  logoCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  logo: { width: '100%', height: 70 },
+  logo: { width: '100%', height: 90 },
   subtitulo: { fontSize: 14, color: '#cbd5e1', textAlign: 'center', marginTop: 16, marginBottom: 32 },
   form: { gap: 12 },
   input: {
