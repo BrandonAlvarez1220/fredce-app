@@ -1,10 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { actualizarEstatusValvula, getEtapas, getServicios, subirFoto } from '../api/client';
+import { actualizarEstatusValvula, eliminarFoto, getEtapas, getServicios, subirFoto } from '../api/client';
 import {
+  eliminarFotoDeLocal,
   guardarEtapas,
   guardarMeta,
   guardarServicios,
   listarFotosPendientes,
+  listarFotosPorEliminar,
   listarValvulasConEstatusPendiente,
   marcarEstatusSincronizado,
   marcarFotoError,
@@ -79,6 +81,28 @@ export async function sincronizarEstatusValvulas(db: SQLiteDatabase, token: stri
       await marcarEstatusSincronizado(db, v.id);
     } catch {
       // se reintenta solo en el siguiente sync — nada que hacer aquí
+    }
+  }
+}
+
+/**
+ * Confirma con el servidor las fotos que el técnico borró después de que ya
+ * se habían subido (las nunca-subidas se borran de una vez, local, sin
+ * pasar por aquí — ver `eliminarFotoDeLocal` en la pantalla de válvula).
+ * La foto ya está oculta en la app desde el momento en que se marcó para
+ * borrar; esto solo confirma el borrado del lado del servidor y, si sale
+ * bien, limpia la fila local por completo.
+ */
+export async function sincronizarEliminacionesFotos(db: SQLiteDatabase, token: string): Promise<void> {
+  const pendientes = await listarFotosPorEliminar(db);
+  for (const f of pendientes) {
+    try {
+      if (f.server_id) {
+        await eliminarFoto(f.server_id, token);
+      }
+      await eliminarFotoDeLocal(db, f.id);
+    } catch {
+      // se reintenta en el siguiente sync — la foto sigue oculta mientras tanto
     }
   }
 }

@@ -128,9 +128,19 @@ Feedback tras ver la ronda 4 ya corregida: "el FAB debería estar un poco más a
 - **FAB un poco más arriba**: se subió de `bottom:24` a `bottom:40`. Nota aparte, no un cambio de código: en el screenshot se ve una barra de 3 íconos (☰ ⭕ ‹) pegada hasta abajo y un círculo con engrane flotando cerca del header — ninguno de los dos es parte de la UI de esta app (no hay ningún ícono de engrane en ningún archivo). Todo apunta a que son los controles flotantes de la app/herramienta usada para grabar la pantalla, no la barra de navegación real de Android. Si es así, ningún ajuste de `SafeAreaView`/insets del lado de la app puede "arreglarlo" porque no es parte del sistema operativo — vale la pena confirmar probando sin grabar pantalla (captura con el botón físico de encendido+volumen) antes de seguir ajustando este punto a ciegas.
 - **Selector de estatus "muy simple/modificable"**: se rediseñó de 3 botones sueltos a un control segmentado dentro de una tarjeta propia (sombra, borde, radio de esquina), con una etiqueta "ESTATUS DE LA VÁLVULA" arriba para darle contexto, e íconos por opción (reloj/herramienta/palomita, `@expo/vector-icons`) en vez de solo texto. También se agregó **confirmación** (`Alert.alert`) específicamente al marcar "Completa" — es la acción más definitiva (cierra el trabajo en esa válvula), así que ya no se puede activar con un solo toque accidental como las otras dos; "Pendiente"/"En proceso" siguen siendo de un toque, por ser estados de trabajo normales y reversibles.
 
+## Borrar una foto (2026-09-13)
+
+Brandon preguntó "¿y si tomo una mala foto, de borrarla ni hablar, verdad?" — no había forma, hueco real. Se agregó un botón "✕" en la esquina de cada miniatura (pantalla de válvula), con confirmación (`Alert`). El comportamiento depende de si la foto ya se había subido:
+
+- **Nunca subida** (`sync_status` en `pendiente`/`error`): se borra de una vez, local — fila de SQLite + archivo físico (`File.delete()`), sin tocar el servidor.
+- **Ya subida** (`sync_status='subida'`): se oculta de la cuadrícula al instante (nuevo estado `sync_status='eliminar_pendiente'`, filtrado en la UI) y `sincronizarEliminacionesFotos` confirma el borrado con el servidor en el siguiente sync — mismo patrón optimista/offline-first que ya usan las fotos y el estatus de válvula.
+
+**Requiere otro endpoint nuevo, todavía sin implementar**: `DELETE /api/tecnico/fotos/{id}` (el `id` del servidor, no el `client_uuid`) — ya se le pidió a FredceSistema, con nota de que eventualmente debería limpiar también el archivo de Drive si ya está conectado de verdad. Mientras no exista, la foto se queda oculta en la app pero técnicamente sigue en el servidor — no rompe nada, solo no se libera del lado de allá todavía.
+
 ## Pendiente
 
-- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 4), y ahora también el flujo completo de cambio de estatus desde la app misma — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios, razonamiento de layout/contraste, y pruebas de API por curl (no a través de la UI real).
+- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 5) y los flujos de estatus/borrado de foto — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios, razonamiento de layout/contraste, y pruebas de API por curl (no a través de la UI real).
+- **`DELETE /api/tecnico/fotos/{id}` sin implementar** — bloquea que el borrado de una foto ya subida se confirme con el servidor (ver arriba).
 - Manejo de caso "servicio no encontrado en campo" (aún no resuelto en el spec).
 - Reemplazar el ícono de la app (hoy es el genérico de Expo) por uno basado en el logo de marca — el `logo-dark.png` nuevo tampoco sirve directo como adaptive icon (es rectangular, 2823×1053); requiere recortar solo el ícono de la válvula a un cuadrado.
 - Pantalla de detalle de servicio no distingue todavía qué técnico tomó qué foto (a propósito, el spec dice que el reporte no agrupa por técnico) pero podría valer la pena mostrarlo como metadato secundario.

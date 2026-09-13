@@ -1,3 +1,4 @@
+import { File } from 'expo-file-system';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Etapa, FotoServidor, Servicio } from '../api/types';
 
@@ -12,7 +13,10 @@ export interface FotoLocal {
   fecha_captura: string;
   server_id: number | null;
   drive_file_id: string | null;
-  sync_status: 'pendiente' | 'subida' | 'error';
+  // 'eliminar_pendiente': el técnico borró una foto que ya se había subido —
+  // se oculta de inmediato en la UI (ver valvulas/[id].tsx) mientras se
+  // confirma el borrado con el servidor en el siguiente sync.
+  sync_status: 'pendiente' | 'subida' | 'error' | 'eliminar_pendiente';
   sync_error: string | null;
 }
 
@@ -210,6 +214,43 @@ export function marcarFotoError(db: SQLiteDatabase, clientUuid: string, error: s
       clientUuid,
     ])
     .then(() => undefined);
+}
+
+/**
+ * Borra una foto por completo: la fila de SQLite y, si tenía un archivo
+ * local, el archivo también. Segura de llamar en cualquier momento —para
+ * fotos que nunca llegaron a subir (pendiente/error) esto es un borrado
+ * real e inmediato; para una foto ya subida, se usa DESPUÉS de que el
+ * servidor confirmó el borrado (ver [[marcarFotoParaEliminar]] +
+ * `sincronizarEliminacionesFotos`), no antes.
+ */
+export async function eliminarFotoDeLocal(db: SQLiteDatabase, id: number): Promise<void> {
+  const foto = await db.getFirstAsync<{ file_uri: string }>('SELECT file_uri FROM fotos WHERE id = ?', [id]);
+  await db.runAsync('DELETE FROM fotos WHERE id = ?', [id]);
+  if (foto?.file_uri) {
+    try {
+      const archivo = new File(foto.file_uri);
+      if (archivo.exists) archivo.delete(); // síncrono, ver expo-file-system SDK 57
+    } catch {
+      // el archivo físico no se pudo borrar (poco probable) — no es crítico,
+      // la foto ya desapareció de la app de cualquier forma
+    }
+  }
+}
+
+/**
+ * Marca una foto YA SUBIDA para borrar: se oculta de la cuadrícula al
+ * instante (ver el filtro en valvulas/[id].tsx) y queda pendiente de que
+ * `sincronizarEliminacionesFotos` confirme el borrado con el servidor.
+ */
+export function marcarFotoParaEliminar(db: SQLiteDatabase, id: number): Promise<void> {
+  return db
+    .runAsync("UPDATE fotos SET sync_status = 'eliminar_pendiente' WHERE id = ?", [id])
+    .then(() => undefined);
+}
+
+export function listarFotosPorEliminar(db: SQLiteDatabase): Promise<FotoLocal[]> {
+  return db.getAllAsync<FotoLocal>("SELECT * FROM fotos WHERE sync_status = 'eliminar_pendiente'");
 }
 
 export async function contarFotosPendientes(db: SQLiteDatabase): Promise<number> {

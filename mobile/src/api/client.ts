@@ -93,6 +93,17 @@ export function actualizarEstatusValvula(
 }
 
 /**
+ * NOTA: igual que actualizarEstatusValvula, este endpoint todavía no existe
+ * del lado de generador-facturas — propuesto 2026-09-13 para poder borrar
+ * una foto ya subida (mala, repetida, etc). Mientras no exista, la foto
+ * queda oculta en la app (ver `sync_status='eliminar_pendiente'`) pero
+ * técnicamente sigue en el servidor/Drive hasta que se implemente.
+ */
+export function eliminarFoto(serverId: number, token: string): Promise<Record<string, unknown>> {
+  return request(`/fotos/${serverId}`, { method: 'DELETE', token });
+}
+
+/**
  * Sube una foto ya capturada y guardada localmente. Idempotente por
  * clientUuid: reintentar la misma subida (p.ej. tras perder señal a medio
  * camino) es seguro, el servidor regresa el registro existente.

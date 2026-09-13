@@ -9,9 +9,11 @@ import { getValvula } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import {
   actualizarEstatusValvulaLocal,
+  eliminarFotoDeLocal,
   guardarFotosDeServidor,
   listarEtapas,
   listarFotosDeValvula,
+  marcarFotoParaEliminar,
   obtenerValvula,
   type EstatusValvula,
   type FotoLocal,
@@ -101,7 +103,32 @@ export default function ValvulaDetalleScreen() {
     }
   }
 
-  const fotosDeEtapa = fotos.filter((f) => f.etapa_id === etapaSeleccionada);
+  // 'eliminar_pendiente' se oculta de inmediato al confirmar el borrado —
+  // no espera a que el servidor lo confirme para desaparecer de la vista.
+  const fotosDeEtapa = fotos.filter(
+    (f) => f.etapa_id === etapaSeleccionada && f.sync_status !== 'eliminar_pendiente'
+  );
+
+  function onEliminarFoto(foto: FotoLocal) {
+    Alert.alert('Eliminar foto', '¿Seguro que quieres borrar esta foto? No se puede deshacer.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          if (foto.sync_status === 'subida') {
+            // ya está en el servidor: se oculta ya, se confirma con la API en el siguiente sync
+            await marcarFotoParaEliminar(db, foto.id);
+          } else {
+            // nunca llegó a subir (pendiente/error): se puede borrar de una vez, sin servidor de por medio
+            await eliminarFotoDeLocal(db, foto.id);
+          }
+          setFotos(await listarFotosDeValvula(db, valvulaId));
+          syncNow();
+        },
+      },
+    ]);
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -177,6 +204,9 @@ export default function ValvulaDetalleScreen() {
                 <Text style={styles.miniaturaRemotaTexto}>☁︎</Text>
               </View>
             )}
+            <Pressable style={styles.botonBorrar} onPress={() => onEliminarFoto(item)} hitSlop={8}>
+              <Ionicons name="close" size={14} color="#fff" />
+            </Pressable>
             {item.sync_status === 'pendiente' && <Text style={styles.badgePendiente}>Pendiente</Text>}
             {item.sync_status === 'error' && <Text style={styles.badgeError}>Error</Text>}
           </View>
@@ -271,6 +301,17 @@ const styles = StyleSheet.create({
   miniatura: { flex: 1, borderRadius: 8, backgroundColor: colors.borde },
   miniaturaRemota: { alignItems: 'center', justifyContent: 'center' },
   miniaturaRemotaTexto: { fontSize: 24, color: colors.placeholder },
+  botonBorrar: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badgePendiente: {
     position: 'absolute',
     bottom: 8,

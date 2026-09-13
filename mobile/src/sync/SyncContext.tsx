@@ -7,6 +7,7 @@ import { contarFotosPendientes, leerMeta } from '../db/repository';
 import {
   META_LAST_SYNC,
   sincronizarCatalogos,
+  sincronizarEliminacionesFotos,
   sincronizarEstatusValvulas,
   sincronizarFotosPendientes,
   type ResultadoSubida,
@@ -63,6 +64,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setLastError(null);
     try {
       await sincronizarEstatusValvulas(db, currentToken);
+      await sincronizarEliminacionesFotos(db, currentToken);
       const resultado = await sincronizarFotosPendientes(db, currentToken);
       await sincronizarCatalogos(db, currentToken);
       setLastResult(resultado);
