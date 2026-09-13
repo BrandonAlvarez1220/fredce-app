@@ -119,12 +119,11 @@ No existía forma de cambiar el estatus de una válvula desde la app — nacía 
 2. `sincronizarEstatusValvulas` intenta confirmarlo con el servidor en cada sync (antes incluso que las fotos, para minimizar la ventana de la siguiente nota).
 3. `guardarServicios` fue modificado para NO pisar un estatus todavía pendiente de confirmar cuando llega un sync de catálogo — sin esto, un cambio de estatus recién hecho podía perderse si el catálogo se refrescaba antes de que el cambio llegara al servidor.
 
-**Importante — requiere un endpoint que generador-facturas todavía no tiene:** `PUT /api/tecnico/valvulas/{id}/estatus` con body `{ estatus: "pendiente"|"en_proceso"|"completo" }`. Ya se lo pedí a FredceSistema. Mientras no exista, el cambio se ve bien en la app (UI optimista) pero nunca se confirma con el servidor — se queda con el reloj de arena (⏳) junto a los botones indefinidamente, reintentando en cada sync sin romper nada ni perder el dato local.
+**`PUT /api/tecnico/valvulas/{id}/estatus`** — ya implementado por FredceSistema y validado por mí directo contra el servidor LAN real (`tecnico1`, cambio válido, 422 en estatus fuera del ENUM, 404 en válvula no asignada, 401 sin token — todo correcto). El cliente de la app ya apunta ahí, no requiere ningún cambio adicional.
 
 ## Pendiente
 
-- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 4) — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios y razonamiento de layout/contraste.
-- **`PUT /api/tecnico/valvulas/{id}/estatus` sin implementar del lado de generador-facturas** — bloquea que el cambio de estatus se confirme de verdad (ver arriba).
+- Volver a probar en dispositivo real TODOS los ajustes de UI (rondas 1 a 4), y ahora también el flujo completo de cambio de estatus desde la app misma — nada se ha podido confirmar visualmente desde esta sesión, solo por bundle/tsc limpios, razonamiento de layout/contraste, y pruebas de API por curl (no a través de la UI real).
 - Manejo de caso "servicio no encontrado en campo" (aún no resuelto en el spec).
 - Reemplazar el ícono de la app (hoy es el genérico de Expo) por uno basado en el logo de marca — el `logo-dark.png` nuevo tampoco sirve directo como adaptive icon (es rectangular, 2823×1053); requiere recortar solo el ícono de la válvula a un cuadrado.
 - Pantalla de detalle de servicio no distingue todavía qué técnico tomó qué foto (a propósito, el spec dice que el reporte no agrupa por técnico) pero podría valer la pena mostrarlo como metadato secundario.
