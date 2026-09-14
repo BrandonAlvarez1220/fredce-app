@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
  */
 export const API_BASE_URL: string =
   (Constants.expoConfig?.extra?.apiBaseUrl as string | undefined) ??
-  'http://192.168.0.18:8000/api/tecnico';
+  'http://192.168.0.13:8000/api/tecnico';
 
 /** Cuánto tiempo (ms) esperar una respuesta antes de considerar "sin señal". */
 export const REQUEST_TIMEOUT_MS = 15000;
