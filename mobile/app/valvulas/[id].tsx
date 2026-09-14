@@ -171,7 +171,14 @@ export default function ValvulaDetalleScreen() {
         contentContainerStyle={styles.chips}
         renderItem={({ item }) => {
           const activo = item.id === etapaSeleccionada;
-          const totalEnEtapa = fotos.filter((f) => f.etapa_id === item.id).length;
+          // Mismo filtro que fotosDeEtapa (abajo): una foto marcada
+          // 'eliminar_pendiente' ya desapareció de la cuadrícula al
+          // instante, pero seguía contando aquí hasta que el borrado se
+          // confirmaba con el servidor — el chip quedaba con un número
+          // viejo mientras tanto (bug reportado por Brandon 2026-09-13).
+          const totalEnEtapa = fotos.filter(
+            (f) => f.etapa_id === item.id && f.sync_status !== 'eliminar_pendiente'
+          ).length;
           return (
             <Pressable
               style={[styles.chip, activo && styles.chipActivo]}
