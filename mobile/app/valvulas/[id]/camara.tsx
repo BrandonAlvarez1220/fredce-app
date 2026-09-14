@@ -5,7 +5,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { encolarFoto } from '../../../src/db/repository';
 import { useSync } from '../../../src/sync/SyncContext';
@@ -54,6 +54,12 @@ export default function CamaraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [capturando, setCapturando] = useState(false);
   const [tomadasEnRafaga, setTomadasEnRafaga] = useState(0);
+  // El hardware de la cámara tarda un poco en estar listo tras montar la
+  // vista — disparar antes de eso es la causa típica del CodedError
+  // "Failed to capture image" que reportó Brandon (intermitente, "mientras
+  // probaba subir fotos en distintas categorías": cada cambio de etapa
+  // vuelve a montar esta pantalla). onCameraReady lo evita de raíz.
+  const [camaraLista, setCamaraLista] = useState(false);
 
   if (!permission) {
     return <View style={styles.container} />;
@@ -74,7 +80,7 @@ export default function CamaraScreen() {
   }
 
   async function tomarFoto() {
-    if (!cameraRef.current || capturando) return;
+    if (!cameraRef.current || capturando || !camaraLista) return;
     setCapturando(true);
     try {
       // Calidad alta al capturar (queremos el detalle original); el tamaño
@@ -95,6 +101,13 @@ export default function CamaraScreen() {
       setTomadasEnRafaga((n) => n + 1);
       await refreshPendingCount();
       syncNow(); // intento silencioso en cuanto hay señal, sin bloquear la ráfaga
+    } catch (err) {
+      // Antes esto no se atrapaba: el CodedError de expo-camera ("Failed to
+      // capture image", intermitente) subía como promesa sin manejar y
+      // tronaba en silencio sin que el técnico supiera que esa foto no se
+      // guardó (bug reportado por Brandon vía FredceSistema, 2026-09-13).
+      console.warn('[camara] error al capturar', err);
+      Alert.alert('No se pudo tomar la foto', 'Intenta de nuevo.');
     } finally {
       setCapturando(false);
     }
@@ -109,7 +122,12 @@ export default function CamaraScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.zonaCamara}>
-        <CameraView ref={cameraRef} style={styles.camara} facing="back" />
+        <CameraView
+          ref={cameraRef}
+          style={styles.camara}
+          facing="back"
+          onCameraReady={() => setCamaraLista(true)}
+        />
         {tomadasEnRafaga > 0 && (
           <View style={styles.overlaySuperior}>
             <Text style={styles.contador}>{tomadasEnRafaga} tomada(s)</Text>
@@ -122,7 +140,11 @@ export default function CamaraScreen() {
           <Text style={styles.listo}>Listo</Text>
         </Pressable>
 
-        <Pressable style={styles.disparador} onPress={tomarFoto} disabled={capturando} />
+        <Pressable
+          style={[styles.disparador, !camaraLista && styles.disparadorDeshabilitado]}
+          onPress={tomarFoto}
+          disabled={capturando || !camaraLista}
+        />
 
         <View style={{ width: 60 }} />
       </View>
@@ -160,4 +182,5 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: '#94a3b8',
   },
+  disparadorDeshabilitado: { opacity: 0.4 },
 });
