@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Etapa } from '../../src/api/types';
 import { getValvula } from '../../src/api/client';
@@ -44,6 +44,10 @@ export default function ValvulaDetalleScreen() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [etapaSeleccionada, setEtapaSeleccionada] = useState<number | null>(null);
   const [fotos, setFotos] = useState<FotoLocal[]>([]);
+  // Solo mientras se mantiene presionada una miniatura, para "espiar" el
+  // detalle — no es una vista que haya que cerrar aparte, al soltar
+  // desaparece sola (mismo patrón que WhatsApp/galería nativa).
+  const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     const [v, es, fs] = await Promise.all([
@@ -205,7 +209,14 @@ export default function ValvulaDetalleScreen() {
         renderItem={({ item }) => (
           <View style={styles.celda}>
             {item.file_uri ? (
-              <Image source={{ uri: item.file_uri }} style={styles.miniatura} />
+              <Pressable
+                style={styles.miniatura}
+                onLongPress={() => setFotoAmpliada(item.file_uri)}
+                onPressOut={() => setFotoAmpliada(null)}
+                delayLongPress={300}
+              >
+                <Image source={{ uri: item.file_uri }} style={styles.miniatura} />
+              </Pressable>
             ) : (
               <View style={[styles.miniatura, styles.miniaturaRemota]}>
                 <Text style={styles.miniaturaRemotaTexto}>☁︎</Text>
@@ -227,6 +238,16 @@ export default function ValvulaDetalleScreen() {
           </View>
         )}
       />
+
+      {/* Vista ampliada al mantener presionada una miniatura — se cierra
+          sola al soltar, no requiere ningún gesto ni botón para cerrarla. */}
+      <Modal visible={fotoAmpliada !== null} transparent animationType="fade">
+        <View style={styles.modalFondo} pointerEvents="none">
+          {fotoAmpliada && (
+            <Image source={{ uri: fotoAmpliada }} style={styles.modalImagen} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
 
       {/* FAB en vez de la barra completa de antes: al no ir pegado al borde
           (margen de 24 + la propia SafeAreaView), no depende de calcular
@@ -314,6 +335,8 @@ const styles = StyleSheet.create({
   vacio: { textAlign: 'center', color: colors.textoSecundario, marginTop: 40, paddingHorizontal: 24 },
   celda: { flex: 1 / 3, aspectRatio: 1, padding: 4 },
   miniatura: { flex: 1, borderRadius: 8, backgroundColor: colors.borde },
+  modalFondo: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  modalImagen: { width: '100%', height: '80%' },
   miniaturaRemota: { alignItems: 'center', justifyContent: 'center' },
   miniaturaRemotaTexto: { fontSize: 24, color: colors.placeholder },
   botonBorrar: {
