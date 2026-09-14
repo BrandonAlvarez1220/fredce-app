@@ -72,6 +72,14 @@ npm start        # abre Metro; escanea el QR con Expo Go, o npm run android
 
 Requiere estar en la misma red que el backend LAN mencionado arriba (o cambiar `apiBaseUrl` a `http://localhost:8000/api/tecnico` si el backend corre en la misma máquina que el emulador).
 
+## Generar el APK instalable (EAS Build)
+
+Repo ya preparado (`android.package` en `app.json` + perfil `preview` en
+`eas.json`), pero **todavía no generado** — falta primero mover el backend
+a producción y actualizar `apiBaseUrl` (hoy apunta a una IP de LAN de
+pruebas, ver abajo). Guía completa paso a paso, con checklist de qué debe
+estar listo antes: [`docs/generar-apk.md`](./docs/generar-apk.md).
+
 ## Verificado en esta sesión (sin dispositivo físico a mano)
 
 - `npx tsc --noEmit` — sin errores de tipos.
