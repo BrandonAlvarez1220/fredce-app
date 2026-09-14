@@ -2,6 +2,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
+import { ApiClientError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { contarFotosPendientes, leerMeta } from '../db/repository';
 import {
@@ -32,6 +33,12 @@ interface SyncContextValue {
   lastSyncAt: string | null;
   lastResult: ResultadoSubida | null;
   lastError: string | null;
+  // true cuando el servidor rechazó el token (401) en el último intento —
+  // a diferencia de lastError (sin señal, error de servidor, etc.), esto
+  // NO se arregla solo reintentando: el técnico necesita señal + volver a
+  // iniciar sesión. Mientras tanto sigue pudiendo capturar fotos (100%
+  // local) y nada lo saca a la fuerza de la app — ver AuthGate.
+  sessionExpired: boolean;
   syncNow: () => Promise<void>;
   refreshPendingCount: () => Promise<void>;
 }
@@ -47,6 +54,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ResultadoSubida | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const syncingRef = useRef(false); // evita disparar dos sync en paralelo (NetInfo + AppState + botón)
   const tokenRef = useRef(token);
@@ -62,6 +70,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     syncingRef.current = true;
     setIsSyncing(true);
     setLastError(null);
+    setSessionExpired(false);
     try {
       await sincronizarEstatusValvulas(db, currentToken);
       await sincronizarEliminacionesFotos(db, currentToken);
@@ -70,9 +79,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setLastResult(resultado);
       setLastSyncAt(await leerMeta(db, META_LAST_SYNC));
     } catch (err) {
-      // Silencioso a propósito: sin señal es el caso normal en campo, no un
-      // error que deba interrumpir al técnico. Se reintenta solo después.
-      setLastError(err instanceof Error ? err.message : 'No se pudo sincronizar');
+      // Sin señal es el caso normal en campo, no un error que deba
+      // interrumpir al técnico — se reintenta solo. Un 401 es distinto: no
+      // se arregla reintentando, así que se marca aparte (sessionExpired)
+      // para que la pantalla de inicio pueda avisar con un mensaje que sí
+      // tiene sentido ("vuelve a iniciar sesión") en vez de "se reintenta solo".
+      if (err instanceof ApiClientError && err.status === 401) {
+        setSessionExpired(true);
+        setLastError('Tu sesión venció');
+      } else {
+        setLastError(err instanceof Error ? err.message : 'No se pudo sincronizar');
+      }
     } finally {
       await refreshPendingCount();
       setIsSyncing(false);
@@ -111,8 +128,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [db]);
 
   const value = useMemo<SyncContextValue>(
-    () => ({ isSyncing, pendingCount, lastSyncAt, lastResult, lastError, syncNow, refreshPendingCount }),
-    [isSyncing, pendingCount, lastSyncAt, lastResult, lastError]
+    () => ({
+      isSyncing,
+      pendingCount,
+      lastSyncAt,
+      lastResult,
+      lastError,
+      sessionExpired,
+      syncNow,
+      refreshPendingCount,
+    }),
+    [isSyncing, pendingCount, lastSyncAt, lastResult, lastError, sessionExpired]
   );
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;

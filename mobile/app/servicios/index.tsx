@@ -17,7 +17,7 @@ const ESTATUS_LABEL: Record<string, string> = {
 export default function ServiciosScreen() {
   const db = useSQLiteContext();
   const { tecnico, logout } = useAuth();
-  const { isSyncing, pendingCount, lastSyncAt, lastResult, lastError, syncNow } = useSync();
+  const { isSyncing, pendingCount, lastSyncAt, lastResult, lastError, sessionExpired, syncNow } = useSync();
   const router = useRouter();
 
   const [servicios, setServicios] = useState<ServicioLocal[]>([]);
@@ -51,6 +51,23 @@ export default function ServiciosScreen() {
         </Pressable>
       </View>
 
+      {/* Distinto de un error de red normal: un 401 no se arregla solo con
+          reintentos (ver SyncContext), así que se avisa aparte y claro —
+          las fotos siguen guardándose local mientras tanto, nada se pierde,
+          pero no van a subir hasta que el técnico vuelva a iniciar sesión
+          con señal. */}
+      {sessionExpired && (
+        <View style={styles.avisoSesion}>
+          <Text style={styles.avisoSesionTexto}>
+            ⚠️ Tu sesión venció. Tus fotos siguen guardándose, pero no subirán hasta que vuelvas a
+            iniciar sesión con señal.
+          </Text>
+          <Pressable style={styles.botonReconectar} onPress={logout}>
+            <Text style={styles.botonReconectarTexto}>Iniciar sesión de nuevo</Text>
+          </Pressable>
+        </View>
+      )}
+
       <View style={styles.barraSync}>
         <View style={{ flex: 1 }}>
           {pendingCount > 0 ? (
@@ -60,7 +77,9 @@ export default function ServiciosScreen() {
           ) : (
             <Text style={styles.pendientesTextoOk}>✓ Todo subido</Text>
           )}
-          {lastError && !isSyncing && <Text style={styles.avisoError}>{lastError}. Se reintenta solo.</Text>}
+          {lastError && !isSyncing && !sessionExpired && (
+            <Text style={styles.avisoError}>{lastError}. Se reintenta solo.</Text>
+          )}
           {lastResult && lastResult.subidas > 0 && !isSyncing && (
             <Text style={styles.avisoOk}>Últimas subidas: {lastResult.subidas}</Text>
           )}
@@ -119,6 +138,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borde,
   },
+  avisoSesion: {
+    backgroundColor: '#fef3c7',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.advertencia,
+    padding: 12,
+    gap: 8,
+  },
+  avisoSesionTexto: { color: '#92400e', fontSize: 12, fontWeight: '600' },
+  botonReconectar: {
+    backgroundColor: colors.advertencia,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  botonReconectarTexto: { color: '#fff', fontWeight: '700', fontSize: 12 },
   pendientesTexto: { color: colors.advertencia, fontWeight: '700', fontSize: 13 },
   pendientesTextoOk: { color: '#16a34a', fontWeight: '600', fontSize: 13 },
   avisoError: { color: colors.textoSecundario, fontSize: 11, marginTop: 2 },
