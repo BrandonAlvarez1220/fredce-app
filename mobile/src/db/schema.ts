@@ -79,4 +79,15 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
       PRAGMA user_version = 2;
     `);
   }
+
+  if (currentVersion < 3) {
+    // Cambio de proveedor de storage de fotos: Google Drive -> OneDrive
+    // (2026-09-13, confirmado por Brandon). Sin datos reales en esta
+    // columna todavía (el uploader del lado servidor sigue siendo un stub),
+    // pero se renombra ya para no arrastrar el nombre viejo.
+    await db.execAsync(`
+      ALTER TABLE fotos RENAME COLUMN drive_file_id TO onedrive_file_id;
+      PRAGMA user_version = 3;
+    `);
+  }
 }

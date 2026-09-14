@@ -33,7 +33,7 @@ export interface FotoServidor {
   id: number;
   client_uuid: string;
   etapa_id: number;
-  drive_file_id: string | null;
+  onedrive_file_id: string | null;
   orden: number | null;
   etiqueta_libre: string | null;
   fecha_captura: string;
@@ -51,7 +51,7 @@ export interface ValvulaDetalle {
 
 export interface SubirFotoResponse {
   id: number;
-  drive_file_id: string | null;
+  onedrive_file_id: string | null;
   ya_existia: boolean;
 }
 

@@ -12,7 +12,7 @@ export interface FotoLocal {
   orden: number | null;
   fecha_captura: string;
   server_id: number | null;
-  drive_file_id: string | null;
+  onedrive_file_id: string | null;
   // 'eliminar_pendiente': el técnico borró una foto que ya se había subido —
   // se oculta de inmediato en la UI (ver valvulas/[id].tsx) mientras se
   // confirma el borrado con el servidor en el siguiente sync.
@@ -123,15 +123,15 @@ export async function guardarFotosDeServidor(
       );
       if (existente) {
         await db.runAsync(
-          'UPDATE fotos SET server_id = ?, drive_file_id = ?, sync_status = ? WHERE client_uuid = ?',
-          [f.id, f.drive_file_id, 'subida', f.client_uuid]
+          'UPDATE fotos SET server_id = ?, onedrive_file_id = ?, sync_status = ? WHERE client_uuid = ?',
+          [f.id, f.onedrive_file_id, 'subida', f.client_uuid]
         );
       } else {
         // Foto que vive en el servidor pero no en este dispositivo (la tomó
         // otro técnico) — no tenemos el archivo local, solo la referencia.
         await db.runAsync(
           `INSERT INTO fotos
-            (client_uuid, valvula_id, etapa_id, file_uri, etiqueta_libre, orden, fecha_captura, server_id, drive_file_id, sync_status)
+            (client_uuid, valvula_id, etapa_id, file_uri, etiqueta_libre, orden, fecha_captura, server_id, onedrive_file_id, sync_status)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'subida')`,
           [
             f.client_uuid,
@@ -142,7 +142,7 @@ export async function guardarFotosDeServidor(
             f.orden,
             f.fecha_captura,
             f.id,
-            f.drive_file_id,
+            f.onedrive_file_id,
           ]
         );
       }
@@ -197,12 +197,12 @@ export function marcarFotoSubida(
   db: SQLiteDatabase,
   clientUuid: string,
   serverId: number,
-  driveFileId: string | null
+  onedriveFileId: string | null
 ): Promise<void> {
   return db
     .runAsync(
-      "UPDATE fotos SET sync_status = 'subida', sync_error = NULL, server_id = ?, drive_file_id = ? WHERE client_uuid = ?",
-      [serverId, driveFileId, clientUuid]
+      "UPDATE fotos SET sync_status = 'subida', sync_error = NULL, server_id = ?, onedrive_file_id = ? WHERE client_uuid = ?",
+      [serverId, onedriveFileId, clientUuid]
     )
     .then(() => undefined);
 }

@@ -52,7 +52,7 @@ export async function sincronizarFotosPendientes(
         etiquetaLibre: foto.etiqueta_libre,
         orden: foto.orden,
       });
-      await marcarFotoSubida(db, foto.client_uuid, res.id, res.drive_file_id);
+      await marcarFotoSubida(db, foto.client_uuid, res.id, res.onedrive_file_id);
       subidas++;
     } catch (err) {
       const mensaje = err instanceof Error ? err.message : 'Error desconocido';
