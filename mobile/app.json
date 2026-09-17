@@ -22,7 +22,11 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["CAMERA"],
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
@@ -40,7 +44,11 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "https://control.fredce.com/api/tecnico"
+      "apiBaseUrl": "https://control.fredce.com/api/tecnico",
+      "router": {},
+      "eas": {
+        "projectId": "f2cd4a80-2df7-4904-b0d9-cab647afd327"
+      }
     }
   }
 }
