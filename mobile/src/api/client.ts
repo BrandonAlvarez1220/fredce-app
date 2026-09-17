@@ -16,6 +16,11 @@ export class ApiClientError extends Error {
   }
 }
 
+// MySQL DATETIME no acepta el ISO 8601 de `Date.toISOString()` (T, ms, Z).
+function aFechaMysql(iso: string): string {
+  return iso.slice(0, 19).replace('T', ' ');
+}
+
 async function request<T>(
   path: string,
   options: {
@@ -130,7 +135,7 @@ export async function subirFoto(
   form.append('client_uuid', params.clientUuid);
   form.append('valvula_id', String(params.valvulaId));
   form.append('etapa_id', String(params.etapaId));
-  form.append('fecha_captura', params.fechaCaptura);
+  form.append('fecha_captura', aFechaMysql(params.fechaCaptura));
   if (params.etiquetaLibre) form.append('etiqueta_libre', params.etiquetaLibre);
   if (params.orden !== undefined && params.orden !== null) form.append('orden', String(params.orden));
   form.append('file', new File(params.fileUri));

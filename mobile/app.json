@@ -16,7 +16,7 @@
     "android": {
       "package": "com.fredce.tecnico",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0A0A0B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -40,7 +40,7 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "http://192.168.0.13:8000/api/tecnico"
+      "apiBaseUrl": "http://192.168.0.26:8000/api/tecnico"
     }
   }
 }
