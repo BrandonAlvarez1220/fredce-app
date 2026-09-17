@@ -1,10 +1,9 @@
 # Guía: generar el APK instalable
 
 Esta guía es para cuando ya estén listos para distribuir un APK real a los
-técnicos — **no antes de mover el backend a producción y actualizar la URL**
-(ver el checklist abajo). Hasta ese momento, seguir probando con Expo Go
-(`npm start` + QR) es lo correcto: es más rápido para iterar y no gasta
-minutos de build.
+técnicos. **Checklist abajo ya completo (2026-09-16)** — backend en
+producción, `apiBaseUrl` apuntando ahí, e ícono real listo — ya no hay
+bloqueo conocido para correr `eas build`.
 
 ## Por qué no es lo mismo que "npm start"
 
@@ -18,20 +17,21 @@ eso es lo que EAS Build genera.
 
 ## Checklist antes de generar el APK "de verdad"
 
-- [ ] Backend (`generador-facturas`) ya corriendo en producción (HostGator o
-      donde quede), no en la LAN de pruebas.
-- [ ] `app.json` → `expo.extra.apiBaseUrl` actualizado a esa URL real (hoy
-      apunta a una IP de LAN, ver README principal — solo funciona en la
-      misma red que esa PC).
-- [ ] Confirmar que el rename OneDrive/`onedrive_file_id` (2026-09-13) ya
-      quedó reflejado en lo que sea que esté corriendo en producción.
-- [ ] Ícono/nombre de la app (`app.json` → `name`, `assets/icon.png`) tal
-      como quieren que se vea en el teléfono — esto también queda "fijo"
-      una vez que empiecen a compartir el APK.
+- [x] Backend (`generador-facturas`) corriendo en producción real
+      (HostGator, `control.fredce.com`), no en la LAN de pruebas —
+      confirmado por FredceSistema 2026-09-16, probado end-to-end (login,
+      PDF, catálogo de técnicos, OneDrive).
+- [x] `app.json` → `expo.extra.apiBaseUrl` actualizado a
+      `https://control.fredce.com/api/tecnico` (2026-09-16).
+- [x] Rename OneDrive/`onedrive_file_id` (2026-09-13) confirmado reflejado
+      en producción — FredceSistema reportó conexión real de OneDrive
+      funcionando.
+- [x] Ícono real de la app (`assets/icon.png` + adaptive icon de Android)
+      reemplazando el genérico de Expo — hecho 2026-09-16, ver README.
 
-Ninguno de estos pasos lo puede hacer este asistente por ti sin que se lo
-pidas explícitamente (mover el backend a HostGator, sobre todo, es una
-acción que toca coordinar con FredceSistema).
+Con esto ya no hay ningún bloqueo conocido — falta solo que Brandon corra
+`eas login` + `eas build -p android --profile preview` de su lado (requiere
+su propia cuenta de Expo, este asistente no lo puede correr).
 
 ## Paso a paso
 
@@ -114,6 +114,7 @@ importa evitar reinstalar el APK a mano en cada teléfono).
 - **El build falla en la nube por un plugin nativo**: revisar el log que da
   el propio dashboard de EAS — casi siempre apunta justo a qué paquete de
   `app.json` → `plugins` está mal configurado.
-- **El APK instala pero no conecta al backend**: casi siempre es
-  `apiBaseUrl` en `app.json` apuntando todavía a la IP de LAN de pruebas —
-  ver el checklist arriba.
+- **El APK instala pero no conecta al backend**: revisar que `apiBaseUrl`
+  en `app.json` sea `https://control.fredce.com/api/tecnico` (no una IP de
+  LAN vieja) y que el teléfono tenga señal/datos — a diferencia de la LAN,
+  producción no depende de estar en ninguna red WiFi en particular.

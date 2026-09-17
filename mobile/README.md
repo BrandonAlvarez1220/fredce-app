@@ -56,11 +56,11 @@ Tres capas, para que nunca dependa de que alguien se acuerde de un botón:
 
 ## Configurar la URL de la API
 
-`app.json` → `expo.extra.apiBaseUrl`. Hoy apunta a la LAN de pruebas de `generador-facturas`:
+`app.json` → `expo.extra.apiBaseUrl`. Desde 2026-09-16 apunta a producción real (HostGator), confirmado por FredceSistema como probado end-to-end (login, PDF, catálogo de técnicos, OneDrive):
 ```
-http://192.168.0.18:8000/api/tecnico
+https://control.fredce.com/api/tecnico
 ```
-Solo válido mientras esa PC esté prendida y el dispositivo esté en la misma red WiFi. Cuando se mude a HostGator, cambiar solo este valor.
+Nota: es el subdominio `control.fredce.com`, no `fredce.com` (el dominio raíz es el sitio público de la empresa). Los técnicos ya pueden usar la app desde cualquier lugar, no dependen de estar en la misma red WiFi que una PC en particular. Para volver a desarrollar contra un backend LAN o local, cambiar solo este valor (y el fallback en `src/config.ts`).
 
 ## Correr en desarrollo
 
@@ -70,15 +70,14 @@ npm install
 npm start        # abre Metro; escanea el QR con Expo Go, o npm run android
 ```
 
-Requiere estar en la misma red que el backend LAN mencionado arriba (o cambiar `apiBaseUrl` a `http://localhost:8000/api/tecnico` si el backend corre en la misma máquina que el emulador).
+Por defecto pega contra producción (ver arriba). Para desarrollar contra un backend local/LAN, cambiar `apiBaseUrl` en `app.json` a `http://localhost:8000/api/tecnico` (si el backend corre en la misma máquina que el emulador) o a la IP LAN correspondiente.
 
 ## Generar el APK instalable (EAS Build)
 
 Repo ya preparado (`android.package` en `app.json` + perfil `preview` en
-`eas.json`), pero **todavía no generado** — falta primero mover el backend
-a producción y actualizar `apiBaseUrl` (hoy apunta a una IP de LAN de
-pruebas, ver abajo). Guía completa paso a paso, con checklist de qué debe
-estar listo antes: [`docs/generar-apk.md`](./docs/generar-apk.md).
+`eas.json`) y `apiBaseUrl` ya apunta a producción — ya no hay bloqueo
+conocido para generar el primer APK real. Guía completa paso a paso, con
+checklist de qué debe estar listo antes: [`docs/generar-apk.md`](./docs/generar-apk.md).
 
 ## Verificado en esta sesión (sin dispositivo físico a mano)
 
