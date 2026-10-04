@@ -76,6 +76,8 @@ export interface VacacionesSaldo {
   // por compatibilidad con servidores que aún no los mandan.
   bloques?: VacacionesBloque[];
   por_vencer?: { dias: number; fecha: string } | null;
+  /** Días extra de correcciones a mano: no vencen ni pertenecen a ningún año. disponible = Σ bloques.restan + fondo. */
+  fondo?: number;
 }
 
 export interface VacacionesBloque {

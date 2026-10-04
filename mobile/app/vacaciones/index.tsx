@@ -123,6 +123,10 @@ export default function VacacionesScreen() {
               Año {b.anio} · quedan {b.restan} de {b.dias} · vencen el {fechaCorta(b.vence)}
             </Text>
           ))}
+          {!!saldo.fondo && saldo.fondo > 0 && (
+            <Text style={styles.detalle}>Días extra · no vencen · quedan {saldo.fondo}</Text>
+          )}
+          <Text style={styles.total}>Total disponible: {saldo.disponible}</Text>
         </View>
       )}
 
@@ -171,6 +175,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, fontWeight: '600', color: colors.textoSecundario },
   grande: { fontSize: 32, fontWeight: '700', color: colors.texto },
   unidad: { fontSize: 14, fontWeight: '500', color: colors.textoSecundario },
+  total: { fontSize: 13, fontWeight: '700', color: colors.texto, marginTop: 4 },
   detalle: { fontSize: 12, color: colors.textoSecundario },
   aviso: { backgroundColor: '#fef3c7', borderWidth: 1, borderColor: colors.advertencia, borderRadius: 10, padding: 12 },
   avisoTexto: { fontSize: 13, color: '#92400e', fontWeight: '600' },
