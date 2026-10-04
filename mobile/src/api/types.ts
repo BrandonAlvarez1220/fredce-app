@@ -58,3 +58,52 @@ export interface SubirFotoResponse {
 export interface ApiError {
   error: string;
 }
+
+// Vacaciones (contrato cerrado con FredceControl, /api/tecnico/vacaciones*).
+// El saldo y los días los calcula SIEMPRE el servidor; la app solo los muestra.
+
+export interface VacacionesSaldo {
+  anios_servicio: number;
+  derecho: number;
+  ajustes: number;
+  tomado: number;
+  pendientes: number;
+  disponible: number;
+  solicitable: number;
+  proximo_aniversario: string | null;
+  dias_proximo_aniversario: number | null;
+}
+
+export type VacacionEstatus = 'solicitada' | 'aprobada' | 'rechazada' | 'cancelada';
+
+export interface VacacionSolicitud {
+  id: number;
+  dias: number;
+  nuevo: boolean;
+  inicio: string;
+  fin: string;
+  estatus: VacacionEstatus;
+  comentario: string | null;
+  respuesta: string | null;
+  resuelta_en: string | null;
+  created_at: string;
+}
+
+export interface Festivo {
+  fecha: string;
+  nombre: string;
+}
+
+export interface VacacionesResumen {
+  saldo: VacacionesSaldo;
+  solicitudes: VacacionSolicitud[];
+  sin_ver: number;
+  festivos: Festivo[];
+}
+
+export interface VacacionesCalculo {
+  dias: number;
+  festivos: Festivo[];
+  solicitable: number;
+  alcanza: boolean;
+}

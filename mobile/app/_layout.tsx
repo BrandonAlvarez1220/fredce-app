@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { migrateDbIfNeeded } from '../src/db/schema';
 import { SyncProvider } from '../src/sync/SyncContext';
 import { colors } from '../src/theme';
+import { VacacionesProvider } from '../src/vacaciones/VacacionesContext';
 
 function CargandoBaseLocal() {
   return (
@@ -47,6 +48,7 @@ export default function RootLayout() {
         <SQLiteProvider databaseName="fredceapp.db" onInit={migrateDbIfNeeded} useSuspense>
           <AuthProvider>
             <SyncProvider>
+              <VacacionesProvider>
               <AuthGate />
               <Stack
                 screenOptions={{
@@ -61,6 +63,8 @@ export default function RootLayout() {
                 <Stack.Screen name="servicios/[id]" options={{ title: 'Servicio' }} />
                 <Stack.Screen name="valvulas/[id]" options={{ title: 'Válvula' }} />
                 <Stack.Screen name="convertidor" options={{ title: 'Convertidor' }} />
+                <Stack.Screen name="vacaciones/index" options={{ title: 'Vacaciones' }} />
+                <Stack.Screen name="vacaciones/solicitar" options={{ title: 'Solicitar vacaciones' }} />
                 {/* Pantalla normal (no modal): en Android, los modales a
                     veces no propagan bien los safe-area insets, que es
                     justo lo que necesitamos aquí para no tapar el botón
@@ -70,6 +74,7 @@ export default function RootLayout() {
                   options={{ headerShown: false, animation: 'slide_from_bottom' }}
                 />
               </Stack>
+              </VacacionesProvider>
             </SyncProvider>
           </AuthProvider>
         </SQLiteProvider>

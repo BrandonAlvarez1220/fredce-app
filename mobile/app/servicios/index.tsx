@@ -6,6 +6,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { listarServicios, type ServicioLocal } from '../../src/db/repository';
 import { useSync } from '../../src/sync/SyncContext';
 import { colors } from '../../src/theme';
+import { useVacaciones } from '../../src/vacaciones/VacacionesContext';
 
 const ESTATUS_LABEL: Record<string, string> = {
   pendiente: 'Pendiente',
@@ -19,6 +20,7 @@ export default function ServiciosScreen() {
   const { tecnico, logout } = useAuth();
   const { isSyncing, pendingCount, lastSyncAt, lastResult, lastError, sessionExpired, syncNow } = useSync();
   const router = useRouter();
+  const { disponible: hayVacaciones, sinVer } = useVacaciones();
 
   const [servicios, setServicios] = useState<ServicioLocal[]>([]);
 
@@ -47,6 +49,11 @@ export default function ServiciosScreen() {
           </Text>
         </View>
         <View style={styles.acciones}>
+          {hayVacaciones && (
+            <Pressable onPress={() => router.push('/vacaciones')}>
+              <Text style={styles.convertidor}>Vacaciones{sinVer > 0 ? ` (${sinVer})` : ''}</Text>
+            </Pressable>
+          )}
           <Pressable onPress={() => router.push('/convertidor')}>
             <Text style={styles.convertidor}>Convertidor</Text>
           </Pressable>

@@ -7,6 +7,8 @@ import type {
   Servicio,
   SubirFotoResponse,
   ValvulaDetalle,
+  VacacionesCalculo,
+  VacacionesResumen,
 } from './types';
 
 export class ApiClientError extends Error {
@@ -145,4 +147,31 @@ export async function subirFoto(
   // pesado de la app, justo en el escenario de señal débil que le importa
   // a este flujo — 15s era optimista para eso.
   return request('/fotos', { method: 'POST', token, form, timeoutMs: UPLOAD_TIMEOUT_MS });
+}
+
+// Vacaciones. 403 = la cuenta no tiene vacaciones (externo, fuera del padrón,
+// etc.); el mensaje del servidor viene listo para mostrar. La app nunca manda
+// id de persona: el servidor la deduce del token.
+
+export async function getVacaciones(token: string): Promise<VacacionesResumen> {
+  return (await request<{ data: VacacionesResumen }>('/vacaciones', { token })).data;
+}
+
+export function marcarVacacionesVistas(token: string): Promise<unknown> {
+  return request('/vacaciones/vistas', { method: 'POST', token });
+}
+
+export async function calcularVacaciones(token: string, inicio: string, fin: string): Promise<VacacionesCalculo> {
+  return (await request<{ data: VacacionesCalculo }>(`/vacaciones/calcular?inicio=${inicio}&fin=${fin}`, { token })).data;
+}
+
+export function solicitarVacaciones(
+  token: string,
+  params: { inicio: string; fin: string; comentario?: string }
+): Promise<unknown> {
+  return request('/vacaciones', { method: 'POST', token, json: params });
+}
+
+export function cancelarVacaciones(token: string, id: number): Promise<unknown> {
+  return request(`/vacaciones/${id}/cancelar`, { method: 'PUT', token });
 }
