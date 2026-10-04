@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FredceApp Técnico",
+    "name": "Fredce Campo",
     "slug": "fredceapp-tecnico",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
+        "CFBundleDisplayName": "Fredce Campo",
         "NSCameraUsageDescription": "Se usa la cámara para fotografiar válvulas durante el servicio."
       }
     },
