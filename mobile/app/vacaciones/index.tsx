@@ -94,7 +94,7 @@ export default function VacacionesScreen() {
         </Text>
         <Text style={styles.detalle}>
           Derecho {saldo.derecho} · Tomados {saldo.tomado}
-          {saldo.ajustes !== 0 ? ` · Ajustes ${saldo.ajustes}` : ''} · Pendientes {saldo.pendientes} · Disponibles{' '}
+          {saldo.ajustes !== 0 ? ` · Correcciones ${saldo.ajustes}` : ''} · Pendientes {saldo.pendientes} · Disponibles{' '}
           {saldo.disponible}
         </Text>
         <Text style={styles.detalle}>
@@ -151,7 +151,7 @@ export default function VacacionesScreen() {
               {s.dias} día{s.dias === 1 ? '' : 's'} hábil{s.dias === 1 ? '' : 'es'}
             </Text>
             {s.comentario ? <Text style={styles.detalle}>Tu comentario: {s.comentario}</Text> : null}
-            {s.respuesta ? <Text style={styles.respuesta}>Respuesta: {s.respuesta}</Text> : null}
+            {s.respuesta ? <Text style={styles.respuesta}>{s.estatus === 'aprobada' ? 'Nota' : 'Respuesta'}: {s.respuesta}</Text> : null}
             {s.estatus === 'solicitada' && (
               <Pressable onPress={() => confirmarCancelar(s.id)}>
                 <Text style={styles.cancelar}>Cancelar solicitud</Text>
