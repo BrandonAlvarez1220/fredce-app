@@ -15,6 +15,14 @@ const ESTATUS: Record<VacacionEstatus, { texto: string; color: string }> = {
 };
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const DIA_MS = 24 * 60 * 60 * 1000;
+/** Días de hoy (local) a una fecha AAAA-MM-DD; solo para decidir si mostrar el aviso. */
+function diasHasta(iso: string): number {
+  const [y, m, d] = iso.split('-').map(Number);
+  const hoy = new Date();
+  return Math.round((new Date(y, m - 1, d).getTime() - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime()) / DIA_MS);
+}
+
 function fechaCorta(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   return `${d} ${MESES[m - 1]} ${y}`;
@@ -98,6 +106,26 @@ export default function VacacionesScreen() {
         </Text>
       </View>
 
+      {saldo.por_vencer && diasHasta(saldo.por_vencer.fecha) <= 120 && (
+        <View style={styles.aviso}>
+          <Text style={styles.avisoTexto}>
+            {saldo.por_vencer.dias} día{saldo.por_vencer.dias === 1 ? '' : 's'} sin usar vence{saldo.por_vencer.dias === 1 ? '' : 'n'} el{' '}
+            {fechaCorta(saldo.por_vencer.fecha)}.
+          </Text>
+        </View>
+      )}
+
+      {saldo.bloques && saldo.bloques.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.label}>Tus bloques vigentes</Text>
+          {saldo.bloques.map((b) => (
+            <Text key={b.anio} style={styles.detalle}>
+              Año {b.anio} · quedan {b.restan} de {b.dias} · vencen el {fechaCorta(b.vence)}
+            </Text>
+          ))}
+        </View>
+      )}
+
       <Pressable style={styles.boton} onPress={() => router.push('/vacaciones/solicitar')}>
         <Text style={styles.botonTexto}>Solicitar vacaciones</Text>
       </Pressable>
@@ -144,6 +172,8 @@ const styles = StyleSheet.create({
   grande: { fontSize: 32, fontWeight: '700', color: colors.texto },
   unidad: { fontSize: 14, fontWeight: '500', color: colors.textoSecundario },
   detalle: { fontSize: 12, color: colors.textoSecundario },
+  aviso: { backgroundColor: '#fef3c7', borderWidth: 1, borderColor: colors.advertencia, borderRadius: 10, padding: 12 },
+  avisoTexto: { fontSize: 13, color: '#92400e', fontWeight: '600' },
   boton: { backgroundColor: colors.naranja, borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   botonTexto: { color: '#fff', fontWeight: '700', fontSize: 15 },
   errorTexto: { fontSize: 12, color: colors.error },

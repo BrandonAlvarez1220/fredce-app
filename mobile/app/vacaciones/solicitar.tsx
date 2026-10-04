@@ -103,9 +103,10 @@ export default function SolicitarVacacionesScreen() {
                 </Text>
               )}
               {!calculo.alcanza && (
-                <Text style={styles.error}>Solo puedes solicitar {calculo.solicitable} días hábiles.</Text>
+                <Text style={styles.error}>
+                  {calculo.motivo ?? `Solo puedes solicitar ${calculo.solicitable} días hábiles.`}
+                </Text>
               )}
-              {calculo.dias < 1 && <Text style={styles.error}>El periodo no incluye días hábiles.</Text>}
             </>
           ) : null}
         </View>

@@ -72,6 +72,19 @@ export interface VacacionesSaldo {
   solicitable: number;
   proximo_aniversario: string | null;
   dias_proximo_aniversario: number | null;
+  // Bloques por aniversario, vigentes hoy (se usan 18 meses y vencen). Opcionales
+  // por compatibilidad con servidores que aún no los mandan.
+  bloques?: VacacionesBloque[];
+  por_vencer?: { dias: number; fecha: string } | null;
+}
+
+export interface VacacionesBloque {
+  anio: number;
+  dias: number;
+  gana: string;
+  /** Primer día en que YA no se pueden usar (usable mientras fecha < vence). */
+  vence: string;
+  restan: number;
 }
 
 export type VacacionEstatus = 'solicitada' | 'aprobada' | 'rechazada' | 'cancelada';
@@ -106,4 +119,6 @@ export interface VacacionesCalculo {
   festivos: Festivo[];
   solicitable: number;
   alcanza: boolean;
+  /** Texto para mostrar tal cual cuando alcanza=false; null si alcanza. */
+  motivo?: string | null;
 }
