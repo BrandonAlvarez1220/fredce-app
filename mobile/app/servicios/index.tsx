@@ -6,7 +6,6 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { listarServicios, type ServicioLocal } from '../../src/db/repository';
 import { useSync } from '../../src/sync/SyncContext';
 import { colors } from '../../src/theme';
-import { useVacaciones } from '../../src/vacaciones/VacacionesContext';
 
 const ESTATUS_LABEL: Record<string, string> = {
   pendiente: 'Pendiente',
@@ -17,10 +16,9 @@ const ESTATUS_LABEL: Record<string, string> = {
 
 export default function ServiciosScreen() {
   const db = useSQLiteContext();
-  const { tecnico, logout } = useAuth();
+  const { tecnico, logout } = useAuth(); // logout: sigue usándose en el aviso de sesión vencida
   const { isSyncing, pendingCount, lastSyncAt, lastResult, lastError, sessionExpired, syncNow } = useSync();
   const router = useRouter();
-  const { disponible: hayVacaciones, sinVer } = useVacaciones();
 
   const [servicios, setServicios] = useState<ServicioLocal[]>([]);
 
@@ -47,19 +45,6 @@ export default function ServiciosScreen() {
           <Text style={styles.sync}>
             {lastSyncAt ? `Última sync: ${new Date(lastSyncAt).toLocaleString()}` : 'Sin sincronizar todavía'}
           </Text>
-        </View>
-        <View style={styles.acciones}>
-          {hayVacaciones && (
-            <Pressable onPress={() => router.push('/vacaciones')}>
-              <Text style={styles.convertidor}>Vacaciones{sinVer > 0 ? ` (${sinVer})` : ''}</Text>
-            </Pressable>
-          )}
-          <Pressable onPress={() => router.push('/convertidor')}>
-            <Text style={styles.convertidor}>Convertidor</Text>
-          </Pressable>
-          <Pressable onPress={logout}>
-            <Text style={styles.salir}>Salir</Text>
-          </Pressable>
         </View>
       </View>
 
@@ -140,9 +125,6 @@ const styles = StyleSheet.create({
   },
   saludo: { fontSize: 18, fontWeight: '700', color: colors.texto },
   sync: { fontSize: 12, color: colors.textoSecundario, marginTop: 2 },
-  acciones: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  convertidor: { color: colors.naranja, fontWeight: '600' },
-  salir: { color: colors.error, fontWeight: '600' },
   barraSync: {
     flexDirection: 'row',
     alignItems: 'center',

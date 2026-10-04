@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { migrateDbIfNeeded } from '../src/db/schema';
 import { SyncProvider } from '../src/sync/SyncContext';
+import { BotonMenu, MenuProvider } from '../src/menu/MenuLateral';
 import { colors } from '../src/theme';
 import { VacacionesProvider } from '../src/vacaciones/VacacionesContext';
 
@@ -49,6 +50,7 @@ export default function RootLayout() {
           <AuthProvider>
             <SyncProvider>
               <VacacionesProvider>
+              <MenuProvider>
               <AuthGate />
               <Stack
                 screenOptions={{
@@ -59,11 +61,11 @@ export default function RootLayout() {
               >
                 <Stack.Screen name="index" options={{ headerShown: false }} />
                 <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen name="servicios/index" options={{ title: 'Mis servicios' }} />
+                <Stack.Screen name="servicios/index" options={{ title: 'Mis servicios', headerLeft: () => <BotonMenu /> }} />
                 <Stack.Screen name="servicios/[id]" options={{ title: 'Servicio' }} />
                 <Stack.Screen name="valvulas/[id]" options={{ title: 'Válvula' }} />
-                <Stack.Screen name="convertidor" options={{ title: 'Convertidor' }} />
-                <Stack.Screen name="vacaciones/index" options={{ title: 'Vacaciones' }} />
+                <Stack.Screen name="convertidor" options={{ title: 'Convertidor', headerLeft: () => <BotonMenu /> }} />
+                <Stack.Screen name="vacaciones/index" options={{ title: 'Vacaciones', headerLeft: () => <BotonMenu /> }} />
                 <Stack.Screen name="vacaciones/solicitar" options={{ title: 'Solicitar vacaciones' }} />
                 {/* Pantalla normal (no modal): en Android, los modales a
                     veces no propagan bien los safe-area insets, que es
@@ -74,6 +76,7 @@ export default function RootLayout() {
                   options={{ headerShown: false, animation: 'slide_from_bottom' }}
                 />
               </Stack>
+              </MenuProvider>
               </VacacionesProvider>
             </SyncProvider>
           </AuthProvider>
