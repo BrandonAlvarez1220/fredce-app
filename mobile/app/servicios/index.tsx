@@ -46,9 +46,14 @@ export default function ServiciosScreen() {
             {lastSyncAt ? `Última sync: ${new Date(lastSyncAt).toLocaleString()}` : 'Sin sincronizar todavía'}
           </Text>
         </View>
-        <Pressable onPress={logout}>
-          <Text style={styles.salir}>Salir</Text>
-        </Pressable>
+        <View style={styles.acciones}>
+          <Pressable onPress={() => router.push('/convertidor')}>
+            <Text style={styles.convertidor}>Convertidor</Text>
+          </Pressable>
+          <Pressable onPress={logout}>
+            <Text style={styles.salir}>Salir</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Distinto de un error de red normal: un 401 no se arregla solo con
@@ -128,6 +133,8 @@ const styles = StyleSheet.create({
   },
   saludo: { fontSize: 18, fontWeight: '700', color: colors.texto },
   sync: { fontSize: 12, color: colors.textoSecundario, marginTop: 2 },
+  acciones: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  convertidor: { color: colors.naranja, fontWeight: '600' },
   salir: { color: colors.error, fontWeight: '600' },
   barraSync: {
     flexDirection: 'row',

@@ -60,6 +60,7 @@ export default function RootLayout() {
                 <Stack.Screen name="servicios/index" options={{ title: 'Mis servicios' }} />
                 <Stack.Screen name="servicios/[id]" options={{ title: 'Servicio' }} />
                 <Stack.Screen name="valvulas/[id]" options={{ title: 'Válvula' }} />
+                <Stack.Screen name="convertidor" options={{ title: 'Convertidor' }} />
                 {/* Pantalla normal (no modal): en Android, los modales a
                     veces no propagan bien los safe-area insets, que es
                     justo lo que necesitamos aquí para no tapar el botón
