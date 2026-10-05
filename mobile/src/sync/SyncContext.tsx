@@ -124,13 +124,16 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   // El listener de AppState no cubre estos casos (la app ya nace 'active' y
   // el token se carga después), y tokenRef ya trae el token al correr esto.
   // Mientras la app está en primer plano, repite cada SYNC_PERIODICO_MS: el
-  // admin puede asignar servicios con la app abierta. Sin señal falla en
-  // silencio (lastError) y se reintenta en el siguiente ciclo.
+  // admin puede asignar servicios con la app abierta.
   useEffect(() => {
     if (!token) return;
     syncNow();
-    const timer = setInterval(() => {
-      if (AppState.currentState === 'active') syncNow();
+    const timer = setInterval(async () => {
+      if (AppState.currentState !== 'active') return;
+      // Sin señal ni se intenta: evita el parpadeo de "sincronizando" y del
+      // aviso de error cada ciclo. Al volver la señal, NetInfo dispara el sync.
+      const red = await NetInfo.fetch();
+      if (red.isConnected && red.isInternetReachable !== false) syncNow();
     }, SYNC_PERIODICO_MS);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
