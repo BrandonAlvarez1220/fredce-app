@@ -27,6 +27,9 @@ import {
  * - Visible: contador de fotos pendientes en Inicio + badge "Pendiente"/
  *   "Error" en cada miniatura (pantalla de válvula).
  */
+/** Cada cuánto se sincroniza solo mientras la app está abierta. */
+const SYNC_PERIODICO_MS = 5 * 60 * 1000;
+
 interface SyncContextValue {
   isSyncing: boolean;
   pendingCount: number;
@@ -116,6 +119,22 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db]);
+
+  // Auto-sync al tener sesión: arranque en frío con sesión guardada y login.
+  // El listener de AppState no cubre estos casos (la app ya nace 'active' y
+  // el token se carga después), y tokenRef ya trae el token al correr esto.
+  // Mientras la app está en primer plano, repite cada SYNC_PERIODICO_MS: el
+  // admin puede asignar servicios con la app abierta. Sin señal falla en
+  // silencio (lastError) y se reintenta en el siguiente ciclo.
+  useEffect(() => {
+    if (!token) return;
+    syncNow();
+    const timer = setInterval(() => {
+      if (AppState.currentState === 'active') syncNow();
+    }, SYNC_PERIODICO_MS);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // Auto-sync al volver la app a primer plano (p.ej. el técnico regresa del
   // hotel y abre la app ya con WiFi).

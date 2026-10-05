@@ -1,8 +1,9 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { obtenerServicio, listarValvulasDeServicio, type ServicioLocal, type ValvulaLocal } from '../../src/db/repository';
+import { useSync } from '../../src/sync/SyncContext';
 import { colors } from '../../src/theme';
 
 const ESTATUS_LABEL: Record<string, string> = {
@@ -20,18 +21,27 @@ export default function ServicioDetalleScreen() {
   const [servicio, setServicio] = useState<ServicioLocal | null>(null);
   const [valvulas, setValvulas] = useState<ValvulaLocal[]>([]);
 
+  const { lastSyncAt } = useSync();
+
+  const cargar = useCallback(async () => {
+    const [s, vs] = await Promise.all([
+      obtenerServicio(db, servicioId),
+      listarValvulasDeServicio(db, servicioId),
+    ]);
+    setServicio(s);
+    setValvulas(vs);
+  }, [db, servicioId]);
+
   useFocusEffect(
     useCallback(() => {
-      (async () => {
-        const [s, vs] = await Promise.all([
-          obtenerServicio(db, servicioId),
-          listarValvulasDeServicio(db, servicioId),
-        ]);
-        setServicio(s);
-        setValvulas(vs);
-      })();
-    }, [db, servicioId])
+      cargar();
+    }, [cargar])
   );
+
+  // Releer cuando termina un sync (puede traer válvulas o estatus nuevos).
+  useEffect(() => {
+    if (lastSyncAt) cargar();
+  }, [lastSyncAt, cargar]);
 
   return (
     <View style={styles.container}>

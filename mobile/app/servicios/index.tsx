@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/auth/AuthContext';
 import { listarServicios, type ServicioLocal } from '../../src/db/repository';
@@ -31,6 +31,12 @@ export default function ServiciosScreen() {
       cargarDesdeLocal();
     }, [cargarDesdeLocal])
   );
+
+  // Cuando un sync (auto o manual) termina, la BD local ya trae los servicios
+  // nuevos: se vuelve a leer sin esperar a que la pantalla se re-enfoque.
+  useEffect(() => {
+    if (lastSyncAt) cargarDesdeLocal();
+  }, [lastSyncAt, cargarDesdeLocal]);
 
   async function onRefresh() {
     await syncNow();

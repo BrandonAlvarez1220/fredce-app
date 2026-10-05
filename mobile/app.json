@@ -2,7 +2,7 @@
   "expo": {
     "name": "Fredce Campo",
     "slug": "fredceapp-tecnico",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "com.fredce.tecnico",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0B",
         "foregroundImage": "./assets/android-icon-foreground.png",
