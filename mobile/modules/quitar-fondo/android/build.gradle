@@ -1,0 +1,21 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.quitarfondo'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.quitarfondo"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // ML Kit Subject Segmentation (modelo "unbundled": no va dentro del APK,
+  // lo descarga Google Play Services una sola vez — ver AndroidManifest.xml)
+  implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
+}

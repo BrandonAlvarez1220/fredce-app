@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Pide a Play Services que descargue el modelo de segmentación en
+         cuanto se instala la app, en vez de esperar al primer uso (que en
+         campo puede ser sin señal). -->
+    <meta-data
+      android:name="com.google.mlkit.vision.DEPENDENCIES"
+      android:value="subject_segment" />
+  </application>
+</manifest>

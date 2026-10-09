@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["QuitarFondoModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.quitarfondo.QuitarFondoModule"]
+  }
+}

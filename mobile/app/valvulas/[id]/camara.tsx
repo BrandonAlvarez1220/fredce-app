@@ -7,6 +7,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { agregarMarca, quitarFondo, quitarFondoDisponible } from '../../../modules/quitar-fondo';
 import { encolarFoto } from '../../../src/db/repository';
 import { useSync } from '../../../src/sync/SyncContext';
 import { colors } from '../../../src/theme';
@@ -42,6 +43,10 @@ async function guardarFotoPermanente(uriTemporal: string): Promise<string> {
   return archivo.uri;
 }
 
+// Se recuerda mientras la app esté abierta: esta pantalla se vuelve a
+// montar en cada cambio de etapa y sería molesto re-activarlo cada vez.
+let quitarFondoRecordado = false;
+
 export default function CamaraScreen() {
   const { id, etapaId } = useLocalSearchParams<{ id: string; etapaId: string }>();
   const valvulaId = Number(id);
@@ -60,6 +65,24 @@ export default function CamaraScreen() {
   // probaba subir fotos en distintas categorías": cada cambio de etapa
   // vuelve a montar esta pantalla). onCameraReady lo evita de raíz.
   const [camaraLista, setCamaraLista] = useState(false);
+  // Falso en Expo Go, en builds anteriores al módulo nativo y en iOS < 17:
+  // ahí el interruptor ni se muestra.
+  const [puedeQuitarFondo] = useState(quitarFondoDisponible);
+  const [sinFondo, setSinFondo] = useState(() => puedeQuitarFondo && quitarFondoRecordado);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const avisoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function mostrarAviso(texto: string) {
+    if (avisoTimer.current) clearTimeout(avisoTimer.current);
+    setAviso(texto);
+    avisoTimer.current = setTimeout(() => setAviso(null), 3000);
+  }
+
+  function alternarSinFondo() {
+    const nuevo = !sinFondo;
+    quitarFondoRecordado = nuevo;
+    setSinFondo(nuevo);
+  }
 
   if (!permission) {
     return <View style={styles.container} />;
@@ -89,7 +112,37 @@ export default function CamaraScreen() {
       // megapixeles de la cámara del teléfono.
       const foto = await cameraRef.current.takePictureAsync({ quality: 0.9 });
       if (!foto) return;
-      const uriComprimida = await comprimirFoto(foto.uri);
+      let uriComprimida = await comprimirFoto(foto.uri);
+      if (sinFondo) {
+        // Se procesa la versión ya comprimida (1600px): el modelo tarda
+        // mucho menos que con la foto original de 12+ MP y el resultado
+        // es igual de útil. Si falla, se guarda la foto normal — nunca se
+        // pierde una foto por culpa del filtro.
+        try {
+          const uriSinFondo = await quitarFondo(uriComprimida);
+          if (uriSinFondo) {
+            new File(uriComprimida).delete();
+            uriComprimida = uriSinFondo;
+          } else {
+            mostrarAviso('No se detectó la pieza: se guardó la foto normal');
+          }
+        } catch (err) {
+          console.warn('[camara] error al quitar fondo', err);
+          mostrarAviso('No se pudo quitar el fondo: se guardó la foto normal');
+        }
+      }
+      // Marca de agua al final (después de quitar fondo, para que el
+      // modelo no confunda el logo con parte del sujeto). Si falla, la foto
+      // se guarda sin marca: preferible a perder la foto.
+      try {
+        const uriConMarca = await agregarMarca(uriComprimida);
+        if (uriConMarca !== uriComprimida) {
+          new File(uriComprimida).delete();
+          uriComprimida = uriConMarca;
+        }
+      } catch (err) {
+        console.warn('[camara] error al agregar marca de agua', err);
+      }
       const uriFinal = await guardarFotoPermanente(uriComprimida);
       await encolarFoto(db, {
         clientUuid: Crypto.randomUUID(),
@@ -133,6 +186,11 @@ export default function CamaraScreen() {
             <Text style={styles.contador}>{tomadasEnRafaga} tomada(s)</Text>
           </View>
         )}
+        {aviso && (
+          <View style={styles.overlayInferior}>
+            <Text style={styles.aviso}>{aviso}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.barraControles}>
@@ -146,7 +204,20 @@ export default function CamaraScreen() {
           disabled={capturando || !camaraLista}
         />
 
-        <View style={{ width: 60 }} />
+        {puedeQuitarFondo ? (
+          <Pressable
+            style={[styles.interruptor, sinFondo && styles.interruptorActivo]}
+            onPress={alternarSinFondo}
+            disabled={capturando}
+            hitSlop={8}
+          >
+            <Text style={[styles.interruptorTexto, sinFondo && styles.interruptorTextoActivo]}>
+              Sin fondo
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={{ width: 60 }} />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -162,6 +233,8 @@ const styles = StyleSheet.create({
   botonPrincipalTexto: { color: '#fff', fontWeight: '700' },
   cancelar: { color: '#94a3b8' },
   overlaySuperior: { position: 'absolute', top: 12, alignSelf: 'center' },
+  overlayInferior: { position: 'absolute', bottom: 12, left: 16, right: 16, alignItems: 'center' },
+  aviso: { color: '#fff', fontSize: 13, backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, textAlign: 'center' },
   contador: { color: '#fff', fontSize: 14, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   // Barra de controles en flujo normal (no absoluta): siempre visible,
   // nunca puede quedar detrás de la barra de navegación del sistema.
@@ -183,4 +256,15 @@ const styles = StyleSheet.create({
     borderColor: '#94a3b8',
   },
   disparadorDeshabilitado: { opacity: 0.4 },
+  interruptor: {
+    width: 60,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#94a3b8',
+    alignItems: 'center',
+  },
+  interruptorActivo: { backgroundColor: colors.naranja, borderColor: colors.naranja },
+  interruptorTexto: { color: '#94a3b8', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  interruptorTextoActivo: { color: '#fff' },
 });
