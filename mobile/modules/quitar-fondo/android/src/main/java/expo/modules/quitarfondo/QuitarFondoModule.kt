@@ -2,7 +2,10 @@ package expo.modules.quitarfondo
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
@@ -25,6 +28,13 @@ private const val UMBRAL_SUJETO = 0.5f
 private const val AREA_MINIMA_SUJETO = 0.02f
 
 private const val CALIDAD_JPEG = 75
+
+// Marca de agua: proporciones relativas al lado corto de la foto para que
+// se vea igual en vertical, horizontal y en cualquier resolución.
+private const val MARCA_ANCHO = 0.28f
+private const val MARCA_MARGEN = 0.025f
+private const val MARCA_ALFA_LOGO = 230       // 0-255
+private const val MARCA_ALFA_FONDO = 180      // placa blanca detrás del logo
 
 class QuitarFondoModule : Module() {
   // Los listeners de ML Kit corren por defecto en el hilo principal; el
@@ -108,6 +118,51 @@ class QuitarFondoModule : Module() {
           segmentador.close()
           promise.reject("ERR_QUITAR_FONDO", e.message ?: "ML Kit no pudo segmentar la imagen", e)
         }
+    }
+
+    // Pega el logo en la esquina inferior derecha sobre una placa blanca
+    // semitransparente (el logo es azul marino: sin la placa desaparecería
+    // en fotos oscuras). Devuelve el file:// de una copia nueva en JPEG.
+    AsyncFunction("agregarMarcaAsync") { uri: String, logoUri: String ->
+      val opciones = BitmapFactory.Options().apply {
+        inPreferredConfig = Bitmap.Config.ARGB_8888
+        inMutable = true
+      }
+      val foto = Uri.parse(uri).path?.let { BitmapFactory.decodeFile(it, opciones) }
+        ?: throw IllegalArgumentException("No se pudo leer la imagen: $uri")
+      val logo = Uri.parse(logoUri).path?.let { BitmapFactory.decodeFile(it) }
+        ?: throw IllegalArgumentException("No se pudo leer el logo: $logoUri")
+      try {
+        val ladoCorto = minOf(foto.width, foto.height).toFloat()
+        val anchoLogo = ladoCorto * MARCA_ANCHO
+        val altoLogo = anchoLogo * logo.height / logo.width
+        val margen = ladoCorto * MARCA_MARGEN
+        val relleno = altoLogo * 0.18f
+
+        val destino = RectF(
+          foto.width - margen - relleno - anchoLogo,
+          foto.height - margen - relleno - altoLogo,
+          foto.width - margen - relleno,
+          foto.height - margen - relleno
+        )
+        val placa = RectF(destino.left - relleno, destino.top - relleno, destino.right + relleno, destino.bottom + relleno)
+
+        val canvas = Canvas(foto)
+        canvas.drawRoundRect(placa, relleno, relleno, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+          color = Color.WHITE
+          alpha = MARCA_ALFA_FONDO
+        })
+        canvas.drawBitmap(logo, null, destino, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+          alpha = MARCA_ALFA_LOGO
+        })
+
+        val archivo = File(appContext.cacheDirectory, "marca_${UUID.randomUUID()}.jpg")
+        FileOutputStream(archivo).use { foto.compress(Bitmap.CompressFormat.JPEG, CALIDAD_JPEG, it) }
+        Uri.fromFile(archivo).toString()
+      } finally {
+        foto.recycle()
+        logo.recycle()
+      }
     }
   }
 }

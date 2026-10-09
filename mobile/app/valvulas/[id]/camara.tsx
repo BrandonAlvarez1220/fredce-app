@@ -7,7 +7,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { quitarFondo, quitarFondoDisponible } from '../../../modules/quitar-fondo';
+import { agregarMarca, quitarFondo, quitarFondoDisponible } from '../../../modules/quitar-fondo';
 import { encolarFoto } from '../../../src/db/repository';
 import { useSync } from '../../../src/sync/SyncContext';
 import { colors } from '../../../src/theme';
@@ -130,6 +130,18 @@ export default function CamaraScreen() {
           console.warn('[camara] error al quitar fondo', err);
           mostrarAviso('No se pudo quitar el fondo: se guardó la foto normal');
         }
+      }
+      // Marca de agua al final (después de quitar fondo, para que el
+      // modelo no confunda el logo con parte del sujeto). Si falla, la foto
+      // se guarda sin marca: preferible a perder la foto.
+      try {
+        const uriConMarca = await agregarMarca(uriComprimida);
+        if (uriConMarca !== uriComprimida) {
+          new File(uriComprimida).delete();
+          uriComprimida = uriConMarca;
+        }
+      } catch (err) {
+        console.warn('[camara] error al agregar marca de agua', err);
       }
       const uriFinal = await guardarFotoPermanente(uriComprimida);
       await encolarFoto(db, {

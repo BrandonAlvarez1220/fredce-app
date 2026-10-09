@@ -9,6 +9,12 @@ import Vision
 private let areaMinimaSujeto: CGFloat = 0.02
 private let calidadJpeg: CGFloat = 0.75
 
+// Marca de agua (mismos valores que en Android), relativos al lado corto.
+private let marcaAncho: CGFloat = 0.28
+private let marcaMargen: CGFloat = 0.025
+private let marcaAlfaLogo: CGFloat = 0.9
+private let marcaAlfaFondo: CGFloat = 0.7
+
 public class QuitarFondoModule: Module {
   public func definition() -> ModuleDefinition {
     Name("QuitarFondo")
@@ -82,6 +88,46 @@ public class QuitarFondoModule: Module {
 
       let destino = FileManager.default.temporaryDirectory
         .appendingPathComponent("sinfondo_\(UUID().uuidString).jpg")
+      try datos.write(to: destino)
+      return destino.absoluteString
+    }
+
+    // Pega el logo en la esquina inferior derecha sobre una placa blanca
+    // semitransparente. Devuelve el file:// de una copia nueva en JPEG.
+    AsyncFunction("agregarMarcaAsync") { (uri: String, logoUri: String) throws -> String in
+      guard let url = URL(string: uri), let foto = UIImage(contentsOfFile: url.path) else {
+        throw Exception(name: "ERR_MARCA_AGUA", description: "No se pudo leer la imagen: \(uri)")
+      }
+      guard let urlLogo = URL(string: logoUri), let logo = UIImage(contentsOfFile: urlLogo.path) else {
+        throw Exception(name: "ERR_MARCA_AGUA", description: "No se pudo leer el logo: \(logoUri)")
+      }
+
+      let tamano = foto.size
+      let ladoCorto = min(tamano.width, tamano.height)
+      let anchoLogo = ladoCorto * marcaAncho
+      let altoLogo = anchoLogo * logo.size.height / logo.size.width
+      let margen = ladoCorto * marcaMargen
+      let relleno = altoLogo * 0.18
+      let destinoLogo = CGRect(
+        x: tamano.width - margen - relleno - anchoLogo,
+        y: tamano.height - margen - relleno - altoLogo,
+        width: anchoLogo, height: altoLogo)
+      let placa = destinoLogo.insetBy(dx: -relleno, dy: -relleno)
+
+      let formato = UIGraphicsImageRendererFormat()
+      formato.scale = 1
+      formato.opaque = true
+      let resultado = UIGraphicsImageRenderer(size: tamano, format: formato).image { _ in
+        foto.draw(at: .zero)
+        UIColor.white.withAlphaComponent(marcaAlfaFondo).setFill()
+        UIBezierPath(roundedRect: placa, cornerRadius: relleno).fill()
+        logo.draw(in: destinoLogo, blendMode: .normal, alpha: marcaAlfaLogo)
+      }
+      guard let datos = resultado.jpegData(compressionQuality: calidadJpeg) else {
+        throw Exception(name: "ERR_MARCA_AGUA", description: "No se pudo generar la imagen con marca")
+      }
+      let destino = FileManager.default.temporaryDirectory
+        .appendingPathComponent("marca_\(UUID().uuidString).jpg")
       try datos.write(to: destino)
       return destino.absoluteString
     }
