@@ -38,6 +38,7 @@
       "expo-router",
       "expo-sqlite",
       "expo-secure-store",
+      "./plugins/mlkit-dependencies",
       [
         "expo-camera",
         {
