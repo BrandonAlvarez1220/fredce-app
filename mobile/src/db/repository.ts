@@ -117,10 +117,13 @@ export async function guardarFotosDeServidor(
 ): Promise<void> {
   await db.withTransactionAsync(async () => {
     for (const f of fotos) {
-      const existente = await db.getFirstAsync<{ id: number }>(
-        'SELECT id FROM fotos WHERE client_uuid = ?',
+      const existente = await db.getFirstAsync<{ id: number; sync_status: string }>(
+        'SELECT id, sync_status FROM fotos WHERE client_uuid = ?',
         [f.client_uuid]
       );
+      // El técnico ya la borró y solo falta que el servidor lo confirme: si
+      // se actualizara aquí volvería a 'subida' y la foto reaparecería.
+      if (existente?.sync_status === 'eliminar_pendiente') continue;
       if (existente) {
         await db.runAsync(
           'UPDATE fotos SET server_id = ?, onedrive_file_id = ?, sync_status = ? WHERE client_uuid = ?',
