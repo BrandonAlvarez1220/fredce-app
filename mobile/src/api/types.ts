@@ -37,6 +37,9 @@ export interface FotoServidor {
   orden: number | null;
   etiqueta_libre: string | null;
   fecha_captura: string;
+  // false si la foto aún no termina de subirse a OneDrive. Ausente en
+  // servidores viejos sin el endpoint de imagen.
+  tiene_imagen?: boolean;
 }
 
 export interface ValvulaDetalle {

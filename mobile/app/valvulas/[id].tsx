@@ -5,11 +5,12 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Etapa } from '../../src/api/types';
-import { getValvula } from '../../src/api/client';
+import { descargarImagenFoto, getValvula } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import {
   actualizarEstatusValvulaLocal,
   eliminarFotoDeLocal,
+  guardarArchivoFotoRemota,
   guardarFotosDeServidor,
   listarEtapas,
   listarFotosDeValvula,
@@ -67,7 +68,23 @@ export default function ValvulaDetalleScreen() {
       try {
         const detalle = await getValvula(valvulaId, token);
         await guardarFotosDeServidor(db, valvulaId, detalle.fotos);
-        setFotos(await listarFotosDeValvula(db, valvulaId));
+        const locales = await listarFotosDeValvula(db, valvulaId);
+        setFotos(locales);
+
+        // Fotos de otros técnicos: sin archivo local, se bajan una por una
+        // (y quedan en disco, así la próxima vez ya no se piden).
+        const sinArchivo = new Set(locales.filter((f) => !f.file_uri && f.server_id).map((f) => f.server_id));
+        let descargo = false;
+        for (const f of detalle.fotos) {
+          if (!f.tiene_imagen || !sinArchivo.has(f.id)) continue;
+          try {
+            await guardarArchivoFotoRemota(db, f.id, await descargarImagenFoto(f.id, token));
+            descargo = true;
+          } catch {
+            // 404 (servidor viejo / aún sin subir) o sin señal: sigue el placeholder
+          }
+        }
+        if (descargo) setFotos(await listarFotosDeValvula(db, valvulaId));
       } catch {
         // sin señal o error del servidor: se ignora, offline-first
       }

@@ -1,4 +1,4 @@
-import { File } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import { API_BASE_URL, REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from '../config';
 import type {
   ApiError,
@@ -87,6 +87,22 @@ export function getServicios(token: string): Promise<{ servicios: Servicio[] }> 
 
 export function getValvula(id: number, token: string): Promise<ValvulaDetalle> {
   return request(`/valvulas/${id}`, { token });
+}
+
+/**
+ * Descarga a disco la foto que tomó otro técnico (ruta relativa a la API, con
+ * el Bearer). Devuelve el uri local; lanza si el servidor responde 404/401 o
+ * no hay señal, y quien llama lo ignora (queda el placeholder).
+ */
+export async function descargarImagenFoto(serverId: number, token: string): Promise<string> {
+  const dir = new Directory(Paths.document, 'fotos-remotas');
+  dir.create({ idempotent: true, intermediates: true });
+  const destino = new File(dir, `${serverId}.jpg`);
+  const file = await File.downloadFileAsync(`${API_BASE_URL}/fotos/${serverId}/imagen`, destino, {
+    headers: { Authorization: `Bearer ${token}` },
+    idempotent: true,
+  });
+  return file.uri;
 }
 
 /**

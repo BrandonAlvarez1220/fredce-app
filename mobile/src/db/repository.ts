@@ -150,6 +150,15 @@ export async function guardarFotosDeServidor(
   });
 }
 
+/** Guarda el archivo descargado de una foto que vive en el servidor (tomada por otro técnico). */
+export async function guardarArchivoFotoRemota(
+  db: SQLiteDatabase,
+  serverId: number,
+  fileUri: string
+): Promise<void> {
+  await db.runAsync("UPDATE fotos SET file_uri = ? WHERE server_id = ? AND file_uri = ''", [fileUri, serverId]);
+}
+
 export function listarFotosDeValvula(db: SQLiteDatabase, valvulaId: number): Promise<FotoLocal[]> {
   return db.getAllAsync<FotoLocal>(
     'SELECT * FROM fotos WHERE valvula_id = ? ORDER BY etapa_id ASC, orden ASC, fecha_captura ASC',
